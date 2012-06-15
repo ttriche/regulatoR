@@ -1,0 +1,5 @@
+import(IRanges)
+import(Biobase)
+import(GenomicRanges)
+import(GenomicFeatures)
+exportPattern("^[[:alpha:]]+")
