@@ -1,5 +1,6 @@
 import(IRanges)
 import(Biobase)
+import(rtracklayer)
 import(GenomicRanges)
 import(GenomicFeatures)
 exportPattern("^[[:alpha:]]+")

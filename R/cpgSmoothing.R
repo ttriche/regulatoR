@@ -1,20 +1,29 @@
-# distance-/eocg-weighted smoothing of 450k probes (correlation wise)
-# load("~/Dropbox/SEs/CD34.METH.se.rda")
-require(dlmodeler)
+## distance-/decay-weighted smoothing of 450k probes (correlation wise)
+##
+## this will need to be turned into a compiled function with 99.9% probability
+##
+distanceWeightedSmooth <- function(SE, assay=NULL, decay=1000) {
 
-# first, we will want a representation of the correlation matrix across normals
-# this could be the blood normals, all of TCGA normal tissues, or whatever...
+  library(parallel)
+  GR <- rowData(SE)
+  if(is.null(assay)) assay = names(assays(SE, withDimnames=F))[[1]]
+  w <- findOverlaps(resize(GR, 2*decay, fix='center'), GR)
+  idx <- split(w, queryHits(w))
+  wts <- mclapply(idx, function(x) { # decaying correlation:
+    raw <- 1 - log(base=decay, distance(GR[queryHits(x)], GR[subjectHits(x)])+1)
+    return(raw/sum(raw)) # normalized weights
+  }) 
+  smoothed <- do.call(rbind, mclapply(as.numeric(names(idx)), function(x) {
+    t(t(assays(SE, F)[[assay]][ subjectHits(idx[[x]]), , drop=F]) %*% wts[[x]])
+  }))
+  message('This function does not yet deal with NAs -- beware.  Or impute.')
+  message('Seriously -- distance-weighted smoothing needs testing and tuning.') 
+  return(smoothed)
 
-# we want to take an X-base-pair rolling weighted average within r2 > 0.8 or so
-# so rig up an Rle of the probes on each chromosomal arm and use runmeans...
+}
 
 # compare (ANOVA) using the 450k CD34/CD19/NEUT normals vs. Andrew Smith's BSseq
-
-
+# also compare to the normal bone marrows from Melnick & Figueroa (eRRBS)
+# and perhaps to PBMNCs from Esteller (since I'm going to use them as normals!)
 # now compare using the repeat percentage, SNP content, and so forth,
 # with and without smoothing.  Can we soft-threshold these "bad" probes?
-
-
-# How does the variance of each probe across samples compare to that of BS-seq?
-
-# How does each probe across samples compare for Kalman vs. 100bp?

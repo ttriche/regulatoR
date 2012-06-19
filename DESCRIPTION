@@ -1,10 +1,11 @@
 Package: regulatoR
 Type: Package
 Title: robust detection of regulatoRy associations between loci and features
-Version: 0.1
-Date: 2012-06-14
-Depends: Biobase, GenomicFeatures, mclust, dlmodeler
-Suggests: BSgenome, Gviz, Rsubread, GMD
+Version: 0.2
+Date: 2012-06-19
+Depends: Biobase, mclust, rtracklayer, FDb.InfiniumMethylation.hg19
+Imports: IRanges, GenomicRanges, GenomicFeatures, rtracklayer
+Suggests: BSgenome, Gviz, Rsubread, GMD, sparsenet, dlmodeler
 Author: Tim Triche, Jr., Hui Shen, Toshinori Hinoue
 Maintainer: Tim Triche, Jr. <tim.triche@gmail.com>
 Description: To be determined
