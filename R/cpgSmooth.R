@@ -2,7 +2,7 @@
 ##
 ## this will need to be turned into a compiled function with 99.9% probability
 ##
-cpgSmoothing <- function(SE, assay=NULL, decay=1000) {
+cpgSmooth <- function(SE, assay=NULL, decay=1000, impute=TRUE) {
 
   library(parallel)
   GR <- rowData(SE)
@@ -13,11 +13,14 @@ cpgSmoothing <- function(SE, assay=NULL, decay=1000) {
     raw <- 1 - log(base=decay, distance(GR[queryHits(x)], GR[subjectHits(x)])+1)
     return(raw/sum(raw)) # normalized weights
   }) 
+  tmp <- assays(SE, F)[[assay]][ grep('^cg', colnames(SE)), ] 
+  if(impute==TRUE && anyMissing(assays(SE,F)[[assay]])) {
+    require(impute)
+    tmp <- impute.knn(tmp)$data
+  }
   smoothed <- do.call(rbind, mclapply(as.numeric(names(idx)), function(x) {
-    t(t(assays(SE, F)[[assay]][ subjectHits(idx[[x]]), , drop=F]) %*% wts[[x]])
+    t(t(tmp[ subjectHits(idx[[x]]), , drop=F ]) %*% wts[[x]])
   }))
-  message('This function does not yet deal with NAs -- beware.  Or impute.')
-  message('Seriously -- distance-weighted smoothing needs testing and tuning.') 
   return(smoothed)
 
 }
