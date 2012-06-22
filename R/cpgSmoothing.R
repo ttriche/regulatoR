@@ -1,8 +1,8 @@
-## distance-/decay-weighted smoothing of 450k probes (correlation wise)
+## distance-/decay-weighted smoothing of 450k probes 
 ##
 ## this will need to be turned into a compiled function with 99.9% probability
 ##
-distanceWeightedSmooth <- function(SE, assay=NULL, decay=1000) {
+cpgSmoothing <- function(SE, assay=NULL, decay=1000) {
 
   library(parallel)
   GR <- rowData(SE)

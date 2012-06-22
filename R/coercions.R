@@ -51,22 +51,23 @@ setAs("ExpressionSet", "SummarizedExperiment",
   }) # }}}
       
 if(require(methylumi)) { ## this is going into MethyLumi anyhow
-  msetToSe <- function(from) { # {{{
+  msetToSE <- function(from) { # {{{
     require(FDb.InfiniumMethylation.hg19) 
-    chip = gsub('^IlluminaHumanMethylation','HM',gsub('k$','',annotation(from)))
+    chip=gsub('^IlluminaHumanMethylation','HM',gsub('k$','',annotation(from)))
     row.dat <- getPlatform(chip)
     asy.dat <- SimpleList()
+    features <- intersect(featureNames(from), names(row.dat))
     if(is(from, 'MethyLumiM')) {
-      asy.dat$mvals = assayDataElement(from, 'exprs')[names(row.dat), ]
+      asy.dat$mvals = assayDataElement(from, 'exprs')[features, ]
     } else if(is(from, 'MethyLumiSet')) {
-      asy.dat$betas = assayDataElement(from, 'betas')[names(row.dat), ]
+      asy.dat$betas = assayDataElement(from, 'betas')[features, ]
     }
-    if( all( c('methylated','unmethylated') %in% assayDataElementNames(from)) ){
-      asy.dat$total = assayDataElement(from, 'methylated')[names(row.dat), ] +
-                      assayDataElement(from, 'unmethylated')[names(row.dat), ]
+    if(all( c('methylated','unmethylated') %in% assayDataElementNames(from))){
+      asy.dat$total = assayDataElement(from, 'methylated')[features, ] +
+                      assayDataElement(from, 'unmethylated')[features, ]
     }
     SummarizedExperiment(assays=asy.dat,
-                         rowData=row.dat,
+                         rowData=row.dat[features],
                          colData=as(pData(from), 'DataFrame'),
                          exptData=as(experimentData(from), 'SimpleList'))
   } # }}}
