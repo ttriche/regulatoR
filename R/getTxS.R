@@ -1,4 +1,5 @@
-getRefSeqTxS <- function(SE, what='TES', genome='hg19') { # {{{
+getRefSeqTxS <- function(SE, what='TES') { # {{{
+  genome <- unique(genome(rowData(SE)))
   if(!(genome %in% c('hg18','hg19'))) {
     stop('Genomes other than hg18 and hg19 are unsupported')
   } else {
@@ -6,13 +7,16 @@ getRefSeqTxS <- function(SE, what='TES', genome='hg19') { # {{{
     data(target)
     GR <- get(target)
   }
+  if(what == 'TES') GR <- resize(GR, 200, fix='center')
+  if(what == 'TSS') GR <- resize(resize(GR, 200, fix='end'), 250, fix='start')
   SE[ queryHits(findOverlaps(rowData(SE), GR)), ] 
 } # }}}
 
-getRefSeqTES <- function(SE, genome='hg19') getRefSeqTxS(SE, 'TES', genome)  
-getRefSeqTSS <- function(SE, genome='hg19') getRefSeqTxS(SE, 'TSS', genome)  
+getRefSeqTES <- function(SE) getRefSeqTxS(SE, what='TES')
+getRefSeqTSS <- function(SE) getRefSeqTxS(SE, what='TSS')
 
-getFANTOMTSS <- function(SE, genome='hg19') { # {{{
+getFANTOMTSS <- function(SE) { # {{{
+  genome <- unique(genome(rowData(SE)))
   if(!(genome %in% c('hg18','hg19'))) {
     stop('Genomes other than hg18 and hg19 are unsupported')
   } else if(genome=='hg18') {
