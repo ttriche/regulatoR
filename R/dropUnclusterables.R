@@ -1,5 +1,5 @@
 ## get rid of common SNPs, chrX, chrY loci from a SummarizedExperiment 
-dropUnclusterables <- function(SE, SNPs=NULL,assay=NULL,RPTs=NULL,byMad=FALSE){ 
+dropUnclusterables <- function(SE, SNPs=NULL,RPTs=NULL,assay=NULL,byMad=FALSE){ 
 
   if(is.null(assay)) assay = names(assays(SE, withDimnames=F))[[1]]
   unclusterable <- which(seqnames(rowData(SE)) %in% c('chrX','chrY'))
