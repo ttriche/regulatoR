@@ -14,13 +14,12 @@ getXplots<-function(x, nProbes=500, col.fun='jet', clinical=NULL){
   ## FIXME: assign gender based on mean methylation (or whatever the assay is)
 	if(!is.null(colData(x)$gender)) {
     colSide <- ifelse(is.na(colData(x)$gender), 'white',
-                      ifelse(toupper(colData(x)$gender) == 'MALE', 
-                             'lightblue',
-                             'pink'))
+                      ifelse(substr(toupper(colData(x)$gender),1,1) == 'M', 
+                             'lightblue', 'pink'))
   } else {
     colSide = rep('white', ncol(x))
   }
-  name = as.character(match.call()["x"])
+  name <- as.character(match.call()["x"])
   asy <- names(assays(x, withDimnames=F))[[1]]
 	tmp <- assays(x, withDimnames=F)[[asy]][XInd, ]
   jet <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", 
@@ -38,5 +37,3 @@ getXplots<-function(x, nProbes=500, col.fun='jet', clinical=NULL){
   message('Assigned chrX cluster (assuming this is DNA methylation data):')
   return(clusts)
 }
-
-
