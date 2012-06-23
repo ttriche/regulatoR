@@ -6,7 +6,8 @@ dropUnclusterables <- function(SE, SNPs=NULL,RPTs=NULL,assay=NULL,byMad=FALSE){
 
   if(byMad==TRUE) {
     require(matrixStats) 
-    lowmad <- which(is.na(rowMads(assays(SE, withDimnames=F)[[assay]])))
+    values(rowData(SE))$mad <- rowMads(assays(SE, withDimnames=F)[[assay]])
+    lowmad <- which(is.na(values(rowData(SE))$mad))
     unclusterable <- union(unclusterable, lowmad)
   }
   if(!is.null(SNPs)) {
