@@ -1,10 +1,10 @@
 cpgSmooth <- function (SE, assay = NULL, decay = 1000, impute = TRUE) {
-
-  library(parallel)
-  data(hg19.by.arm)
+  require(impute)
+  require(parallel)
   GR <- rowData(SE)[ grep('^cg', rownames(SE)), ] 
   if(is.null(assay)) assay = names(assays(SE, withDimnames = F))[[1]]
   message('Subsetting by arm...')
+  data(hg19.by.arm)
   GR.by.arm <- lapply(hg19.by.arm, function(x) subsetByOverlaps(GR, x))
   message('Parallelizing by arm...')
   by.arm <- mclapply(GR.by.arm, function(GR.arm) {
@@ -12,26 +12,23 @@ cpgSmooth <- function (SE, assay = NULL, decay = 1000, impute = TRUE) {
     w <- findOverlaps(resize(GR.arm, 2 * decay, fix = "center"), GR.arm)
     idx <- split(w, queryHits(w))
     print('Computing weights...')
-    wts <- lapply(idx, function(x) { # {{{
-      raw <- 1 - log(base = decay, 
-                     distance(GR.arm[queryHits(x)],GR.arm[subjectHits(x)])+1)
-      return(raw/sum(raw)) # normalize
-    }) # }}}
+    wts <- lapply(idx, getWeights)
     arm.probes <- match(names(GR.arm), rownames(SE))
     tmp <- assays(SE, F)[[assay]][arm.probes, ]
-    if (impute == TRUE && anyMissing(assays(SE, F)[[assay]])) { # {{{
-      message('Imputing NAs...')
-      require(impute)
-      tmp <- impute.knn(tmp)$data
-    } # }}}
+    if(impute == TRUE && anyMissing(tmp)) tmp <- impute.knn(tmp)$data
     print('Smoothing...')
-    smoothed <- do.call(rbind, lapply(as.numeric(names(idx)), function(x) {
+    getWeights <- function(x) { # {{{
+      raw <- 1 - log(base = decay,
+                     distance(GR.arm[queryHits(x)], GR.arm[subjectHits(x)]) + 1)
+      return(raw / sum(raw))
+    } # }}}
+    reWeight <- function(x) { # {{{
       t(t(tmp[subjectHits(idx[[x]]), , drop = F]) %*% wts[[x]])
-    }))
+    } # }}}
+    smoothed <- do.call(rbind, lapply(as.numeric(names(idx)), reWeight))
     rownames(smoothed) <- names(GR.arm)
     return(smoothed)
   })
-  smoothed <- do.call(rbind, by.arm)
+  smoothed <- do.call(rbind, lapply(by.arm, data.matrix))
   return(smoothed[ match(names(GR), rownames(smoothed)), ])
-
 }
