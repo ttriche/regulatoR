@@ -1,32 +1,37 @@
-## distance-/decay-weighted smoothing of 450k probes 
-##
-## this will need to be turned into a compiled function with 99.9% probability
-##
-cpgSmooth <- function(SE, assay=NULL, decay=1000, impute=TRUE) {
+cpgSmooth <- function (SE, assay = NULL, decay = 1000, impute = TRUE) {
 
   library(parallel)
-  GR <- rowData(SE)
-  if(is.null(assay)) assay = names(assays(SE, withDimnames=F))[[1]]
-  w <- findOverlaps(resize(GR, 2*decay, fix='center'), GR)
-  idx <- split(w, queryHits(w))
-  wts <- mclapply(idx, function(x) { # decaying correlation:
-    raw <- 1 - log(base=decay, distance(GR[queryHits(x)], GR[subjectHits(x)])+1)
-    return(raw/sum(raw)) # normalized weights
-  }) 
-  tmp <- assays(SE, F)[[assay]][ grep('^cg', colnames(SE)), ] 
-  if(impute==TRUE && anyMissing(assays(SE,F)[[assay]])) {
-    require(impute)
-    tmp <- impute.knn(tmp)$data
-  }
-  smoothed <- do.call(rbind, mclapply(as.numeric(names(idx)), function(x) {
-    t(t(tmp[ subjectHits(idx[[x]]), , drop=F ]) %*% wts[[x]])
-  }))
-  return(smoothed)
+  data(hg19.by.arm)
+  GR <- rowData(SE)[ grep('^cg', rownames(SE)), ] 
+  if(is.null(assay)) assay = names(assays(SE, withDimnames = F))[[1]]
+  message('Subsetting by arm...')
+  GR.by.arm <- lapply(hg19.by.arm, function(x) subsetByOverlaps(GR, x))
+  message('Parallelizing by arm...')
+  by.arm <- mclapply(GR.by.arm, function(GR.arm) {
+    print('Locating neighbors...')
+    w <- findOverlaps(resize(GR.arm, 2 * decay, fix = "center"), GR.arm)
+    idx <- split(w, queryHits(w))
+    print('Computing weights...')
+    wts <- lapply(idx, function(x) { # {{{
+      raw <- 1 - log(base = decay, 
+                     distance(GR.arm[queryHits(x)],GR.arm[subjectHits(x)])+1)
+      return(raw/sum(raw)) # normalize
+    }) # }}}
+    arm.probes <- match(names(GR.arm), rownames(SE))
+    tmp <- assays(SE, F)[[assay]][arm.probes, ]
+    if (impute == TRUE && anyMissing(assays(SE, F)[[assay]])) { # {{{
+      message('Imputing NAs...')
+      require(impute)
+      tmp <- impute.knn(tmp)$data
+    } # }}}
+    print('Smoothing...')
+    smoothed <- do.call(rbind, lapply(as.numeric(names(idx)), function(x) {
+      t(t(tmp[subjectHits(idx[[x]]), , drop = F]) %*% wts[[x]])
+    }))
+    rownames(smoothed) <- names(GR.arm)
+    return(smoothed)
+  })
+  smoothed <- do.call(rbind, by.arm)
+  return(smoothed[ match(names(GR), rownames(smoothed)), ])
 
 }
-
-# compare (ANOVA) using the 450k CD34/CD19/NEUT normals vs. Andrew Smith's BSseq
-# also compare to the normal bone marrows from Melnick & Figueroa (eRRBS)
-# and perhaps to PBMNCs from Esteller (since I'm going to use them as normals!)
-# now compare using the repeat percentage, SNP content, and so forth,
-# with and without smoothing.  Can we soft-threshold these "bad" probes?
