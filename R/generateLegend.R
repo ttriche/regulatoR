@@ -6,9 +6,6 @@
 # TODO: TODO
 ###############################################################################
 
-
-
-
 getPal<-function(palName="Paired",start=1,step=1,nullCol="white",n=8,na=FALSE){
 	library("RColorBrewer")
 	thisPal<-brewer.pal(n, palName)[c(start:n,(1:(start-1)))]

@@ -1,4 +1,3 @@
-## everything ought to be a SummarizedExperiment aligned to the same genome
 setClassUnion("SummarizedExperimentOrNULL",c("SummarizedExperiment","NULL"))
 
 ## slots: exprData, methData, geneData, exonData, lincData, mirData, cnvData

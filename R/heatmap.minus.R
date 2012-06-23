@@ -6,22 +6,57 @@
 # TODO: TODO
 ###############################################################################
 
-heatmap.minus<-function (x,x2=NULL, order.x=NULL,order.y=NULL,Rowv = NULL, Colv = if (symm) "Rowv" else NULL, 
-		mtext1=NULL,mtext2=NULL, mline1=2,mline2=2, mtextRow=NULL, 
-		distfun = dist, hclustfun = hclust, reorderfun = function(d, 
-				w) reorder(d, w), add.expr, symm = FALSE, revC = identical(Colv, 
-				"Rowv"), scale = c( "row", "column","none"), na.rm = TRUE, 
-		margins = c(6, 6),sidemar=0.5, col=jet.colors(75),ColSideColors, ColSideColors2,RowSideColors, rowColSrt=90,colLabSrt=90,cexRow = 0.2 + 
-				1/log10(nr), cexCol = 0.2 + 1/log10(nc), labCex=1.5,mtextCex=1.3,ratio=1,rowRatio=0.1,colRatio=0.1,labRow = NULL, 
-		labCol = NULL, main = NULL, xlab = NULL, ylab = NULL, keep.dendro = FALSE, Rdend=TRUE,Cdend=TRUE,
-		verbose = getOption("verbose"),output=FALSE, ...) 
-{
-	scale <- if (symm && missing(scale)) 
-				"none"
-			else match.arg(scale)
-	if (length(di <- dim(x)) != 2 || !is.numeric(x)) 
-		stop("'x' must be a numeric matrix")
-	doRdend <- !identical(Rowv, NA)
+heatmap.minus<-function(x,
+                        x2=NULL, 
+                        order.x=NULL,
+                        order.y=NULL,
+                        Rowv=NULL, 
+                        Colv = if (symm) "Rowv" else NULL, 
+                        mtext1=NULL,
+                        mtext2=NULL, 
+                        mline1=2,
+                        mline2=2, 
+                        mtextRow=NULL, 
+                        distfun = dist, 
+                        hclustfun = hclust, 
+                        reorderfun = function(d, w) { reorder(d, w) }, 
+                        add.expr, 
+                        symm = FALSE, 
+                        revC = identical(Colv, "Rowv"), 
+                        scale = c("none", "row", "column"), 
+                        na.rm = TRUE, 
+                        margins = c(6, 6),
+                        sidemar = 0.5, 
+                        col = jet.colors(75),
+                        ColSideColors, 
+                        ColSideColors2,
+                        RowSideColors,
+                        rowColSrt=90,
+                        colLabSrt=90,
+                        cexRow = 0.2 + 1/log10(nr), 
+                        cexCol = 0.2 + 1/log10(nc), 
+                        labCex=1.5,
+                        mtextCex=1.3,
+                        ratio=1,
+                        rowRatio=0.1,
+                        colRatio=0.1,
+                        labRow = NULL, 
+                        labCol = NULL, 
+                        main = NULL, 
+                        xlab = NULL, 
+                        ylab = NULL, 
+                        keep.dendro = FALSE, 
+                        Rdend=TRUE,
+                        Cdend=TRUE,
+		                    verbose = getOption("verbose"),
+                        output=FALSE, 
+                        ...) {
+
+	scale <- ifelse(symm && missing(scale), "none", match.arg(scale))
+
+	if(length(di<-dim(x))!=2 || !is.numeric(x)) stop("x must be a numeric matrix")
+
+  doRdend <- !identical(Rowv, NA)
 	doCdend <- !identical(Colv, NA)
 	
 	nr <- di[1]
