@@ -16,3 +16,6 @@
 ## notes:   the MODEL test statistic is used to gauge significance, 
 ##          so there must be some sort of a penalty in order to sparsify it,
 ##          but right now the best I can come up with is a two-step filter.
+##
+## details: just use the output from summarizeBinned() on CNV and 5MC 
+##          to feed rlm( exprs ~ CNV + METH ) and get a model significance.
