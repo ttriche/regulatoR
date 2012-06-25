@@ -6,8 +6,8 @@ dropUnclusterables <- function(SE, SNPs=NULL,RPTs=NULL,assay=NULL,byMad=FALSE){
 
   if(unique(genome(rowData(SE))) == 'hg19' && is.null(SNPs)) {
     message("Automatically masking common SNPs from hg19...")
-    require(FDb.FDb.UCSC.snp135common.hg19)
-    SNPs <- features(FDb.FDb.UCSC.snp135common.hg19)
+    require(FDb.UCSC.snp135common.hg19)
+    SNPs <- features(FDb.UCSC.snp135common.hg19)
   }
   if(!is.null(SNPs)) {
     snp <- which(rownames(SE) %in% names(subsetByOverlaps(rowData(SE), SNPs)))
@@ -34,6 +34,6 @@ dropUnclusterables <- function(SE, SNPs=NULL,RPTs=NULL,assay=NULL,byMad=FALSE){
     unclusterable <- union(unclusterable, lowmad)
   }
   clusterable <- setdiff(seq_along(names(rowData(SE))), unclusterable)
+  gc(,T)
   return(SE[ clusterable, ])
-
 } 
