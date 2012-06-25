@@ -26,7 +26,7 @@ binByFeature <- function(SE, size=100, smooth=F,assay=NULL,decay=1000,impute=T){
                        featureBins, size=size)
   names(featBinned) <- c(names(genes), names(mirs))
   browser()
-  summarizedBinned(SE, featBinned, assay=assay)    
+  summarizeBinned(SE, featBinned, assay=assay)    
 }
 
 ## equal sized binned blocks for regression modeling e.g. exprs ~ meth + CNV
