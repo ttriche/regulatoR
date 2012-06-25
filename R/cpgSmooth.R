@@ -12,7 +12,7 @@ cpgWeight <- function (SE, decay=1000) {
   ol <- findOverlaps(resize(GR, 2*decay, fix="center"), GR)
   idx <- split(ol, queryHits(ol))
   wts <- lapply(idx, getWeight, GR=GR, decay=decay)
-  res <- list(wts=wts, idx=idx)
+  return(list(wts=wts, idx=idx))
   return(res)
 }
 
