@@ -3,7 +3,11 @@
 # Institute: USC, Epigenome Center
 # Date creation: May 23, 2011
 # Project Name: Hui_PhD_Analysis
-# TODO: TODO
+###############################################################################
+# Edits: tim, tim.triche@usc.edu
+# What:  move lesions matrix to bottom
+#        switch to WashU color scheme
+#        other alterations?
 ###############################################################################
 
 heatmap.minus<-function(x,
