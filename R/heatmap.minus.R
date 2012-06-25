@@ -10,6 +10,21 @@
 #        other alterations?
 ###############################################################################
 
+# one indicator
+getBar <- function(SE, name, col1='gray', col2='black', col3=NULL) { # {{{
+  if(is.logical(colData(SE)[[name]])) ifelse(colData(SE)[[name]], col2, col1)
+  else ifelse(colData(SE)[[name]] %in% c('',' '), col1, col2)
+} # }}}
+
+# multiple indicators
+getMatrix <- function(SE, names, col1='gray', col2='black', col3=NULL) { # {{{
+  mat = do.call(rbind, lapply(names, function(x) getBar(SE, x, col1,col2,col3)))
+  colnames(mat) <- colnames(SE)
+  rownames(mat) <- names
+  return(mat)
+} # }}}
+
+# x is tumor, x2 is normal
 heatmap.minus<-function(x,
                         x2=NULL, 
                         order.x=NULL,

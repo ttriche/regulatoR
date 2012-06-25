@@ -1,13 +1,14 @@
 ## get rid of common SNPs, chrX, chrY loci from a SummarizedExperiment 
-dropUnclusterables <- function(SE, SNPs=NULL,RPTs=NULL,assay=NULL,byMad=FALSE){ 
+dropUnclusterables <- function(SE, SNPs=NULL,RPTs=NULL,assay=NULL) {
 
   message('Excluding features on sex chromosomes...')
   unclusterable <- which(seqnames(rowData(SE)) %in% c('chrX','chrY'))
-
   if(unique(genome(rowData(SE))) == 'hg19' && is.null(SNPs)) {
     message("Automatically masking common SNPs from hg19...")
     require(FDb.UCSC.snp135common.hg19)
     SNPs <- features(FDb.UCSC.snp135common.hg19)
+    detach(package:FDb.UCSC.snp135common.hg19, unload=TRUE)
+    gc(,T)
   }
   if(!is.null(SNPs)) {
     snp <- which(rownames(SE) %in% names(subsetByOverlaps(rowData(SE), SNPs)))
@@ -20,20 +21,13 @@ dropUnclusterables <- function(SE, SNPs=NULL,RPTs=NULL,assay=NULL,byMad=FALSE){
     RPTs <- do.call(c, lapply(seqlevels(Hsapiens), function(ch) {
       GRanges(ch, union(masks(Hsapiens[[ch]])$RM, masks(Hsapiens[[ch]])$TRF))
     }))
+    detach(package:BSgenome.Hsapiens.UCSC.hg19, unload=TRUE) 
+    gc(,T)
   }
   if(!is.null(RPTs)) {
     rpt <- which(rownames(SE) %in% names(subsetByOverlaps(rowData(SE), RPTs)))
     unclusterable <- union(unclusterable, rpt)
   } 
-  if(byMad==TRUE) {
-    require(matrixStats) 
-    message('Excluding features with MAD of 0 or NaN...')
-    if(is.null(assay)) assay = names(assays(SE, withDimnames=F))[[1]]
-    values(rowData(SE))$mad <- rowMads(assays(SE, withDimnames=F)[[assay]])
-    lowmad <- which(is.na(values(rowData(SE))$mad))
-    unclusterable <- union(unclusterable, lowmad)
-  }
   clusterable <- setdiff(seq_along(names(rowData(SE))), unclusterable)
-  gc(,T)
   return(SE[ clusterable, ])
 } 

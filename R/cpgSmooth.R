@@ -1,7 +1,7 @@
 cpgSmooth <- function (SE, assay = NULL, decay = 1000, impute = TRUE) {
   require(impute)
   require(parallel)
-  options("mc.cores"=detectCores())
+  options("mc.cores"=min(8, detectCores())) ## will thrash otherwise
   GR <- rowData(SE)[ grep('^cg', rownames(SE)), ] 
   if(is.null(assay)) assay = names(assays(SE, withDimnames = F))[[1]]
   stopifnot(unique(genome(rowData(SE))) == 'hg19')
