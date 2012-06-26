@@ -26,7 +26,7 @@ cpgSmooth <- function (SE, w=NULL, decay=1000, assay=NULL, impute=T) {
   wts <- w$wts
   tmp <- assays(SE, F)[[assay]]
   if(impute == TRUE && anyMissing(tmp)) tmp <- impute.knn(tmp)$data
-  print(paste('Smoothing', unique(seqnames(SE), '...')))
+  print(paste('Smoothing', unique(seqnames(rowData(SE))), '...'))
   smoothed <- do.call(rbind, lapply(names(idx), reWeightCpG, tmp=tmp, idx=idx))
   rownames(smoothed) <- rownames(SE)
   return(smoothed)
