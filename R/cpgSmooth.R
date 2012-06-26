@@ -3,7 +3,7 @@ getWeight <- function(x, GR, decay=1000) {
   raw / sum(raw) # normalized
 }
 
-reWeightCpG <- function(x, tmp, idx) {
+reWeightCpG <- function(x, tmp, idx, wts) {
   return(t(t(tmp[subjectHits(idx[[x]]), , drop = F]) %*% wts[[x]]))
 }
 
@@ -27,7 +27,8 @@ cpgSmooth <- function (SE, w=NULL, decay=1000, assay=NULL, impute=T) {
   tmp <- assays(SE, F)[[assay]]
   if(impute == TRUE && anyMissing(tmp)) tmp <- impute.knn(tmp)$data
   print(paste('Smoothing', unique(seqnames(rowData(SE))), '...'))
-  smoothed <- do.call(rbind, lapply(names(idx), reWeightCpG, tmp=tmp, idx=idx))
+  smoothed <- do.call(rbind, lapply(names(idx), 
+                                    reWeightCpG, tmp=tmp, idx=idx, wts=wts))
   rownames(smoothed) <- rownames(SE)
   return(smoothed)
 }
