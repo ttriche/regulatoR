@@ -1,21 +1,25 @@
 getWeight <- function(x, GR, decay=1000) {
   raw = 1-log((distance(GR[queryHits(x)], GR[subjectHits(x)])+1), base=decay)
+  names(raw) <- names(GR)[subjectHits(x)]
   raw / sum(raw) # normalized
 }
 
+## FIXME: do the whole thing via matrices
 reWeightCpG <- function(x, tmp, idx, wts) {
   return(t(t(tmp[subjectHits(idx[[x]]), , drop = F]) %*% wts[[x]]))
 }
 
+## FIXME: use a large matrix, not a list
 cpgWeight <- function (SE, decay=1000) {
   GR <- rowData(SE)
   ol <- findOverlaps(resize(GR, 2*decay, fix="center"), GR)
   idx <- split(ol, queryHits(ol))
+  names(idx) <- names(GR)[ queryHits(ol) ]
   wts <- lapply(idx, getWeight, GR=GR, decay=decay)
   return(list(wts=wts, idx=idx))
-  return(res)
 }
 
+## FIXME: use matrix multiplication to obtain the reweighted values
 cpgSmooth <- function (SE, w=NULL, decay=1000, assay=NULL, impute=T) {
   require(impute)
   GR <- rowData(SE)

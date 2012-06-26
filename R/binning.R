@@ -45,6 +45,7 @@ featureBins <- function(x, size=100, up=1500, body=F, enhancers=T, dist=250000){
   return(y)
 } 
 
+## this function will feed directly into localRegression()
 summarizeBinned <- function(SE, binning, assay=NULL) {
   if(is.null(assay)) assay <- names(assays(SE,F))[[1]]
   if(!is(binning, 'GRangesList')) binning <- split(binning)
