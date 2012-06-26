@@ -1,6 +1,9 @@
 ## get rid of common SNPs, chrX, chrY loci from a SummarizedExperiment 
 dropUnclusterables <- function(SE, SNPs=NULL,RPTs=NULL,assay=NULL) {
 
+  message('Dropping features with > 50% NAs...')
+  rowNAs <- function(SE) 
+  unclusterable <- which(seqnames(rowData(SE)) %in% c('chrX','chrY'))
   message('Excluding features on sex chromosomes...')
   unclusterable <- which(seqnames(rowData(SE)) %in% c('chrX','chrY'))
   if(unique(genome(rowData(SE))) == 'hg19' && is.null(SNPs)) {
