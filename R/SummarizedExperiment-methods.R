@@ -32,7 +32,7 @@ setMethod("combine", signature=signature(x="SummarizedExperiment", y="Summarized
               }
               commonAsys <- intersect(names(assays(x, withDimnames=FALSE)),
                                       names(assays(y, withDimnames=FALSE))) 
-              if(length(commonAsys) < 1) stop('No assays in common...'
+              if(length(commonAsys) < 1) stop('No assays in common...')
               commonCols <- intersect(names(colData(x)),
                                       names(colData(y)))
               combineAssay <- function(assay, x, y) {
