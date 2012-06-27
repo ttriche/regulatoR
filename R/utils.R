@@ -23,41 +23,30 @@ byChr <- function(x) { # {{{
 byNAs <- function(SE, max=0.5, assay=NULL) { # {{{
   rowNAs <- rowSums(is.na(asy.fast(SE, assay)), na.rm=T)/ncol(SE)
   split(SE, ifelse(rowNAs > max, 'tooManyNAs', 'OK'))
-}
+} # }}}
 
 ## mostly for pyroPlot
-byList <- function(SE, GR) {
-  if(!'state' %in% names(values(GR))) stop('Need a $state value to segment on')
-  else GRL <- split(GR, as.vector(values(GR)$state))  # should be a factor
-  ol <- findOverlaps(rowData(SE), GRL, type='within') # may dump some probes
-  
-  message('Not finished...')
-} 
+byList <- function(SE, GRL, segmentBy='state', type='within') { # {{{
+  if(!is(GRL, 'GRangesList')) {
+    if(!(segmentBy %in% names(values(GRL)))) {
+      stop(paste0('Please provide a value $', segmentBy, ' to segment on'))
+    } else { 
+      GRL <- split(GRL, as.vector(values(GRL)[[segmentBy]]))
+    }
+  }
+  ol <- findOverlaps(rowData(SE), GRL, type=type) # default may dump features
+  ols <- split(queryHits(ol), subjectHits(ol))
+  names(ols) <- names(GRL)[ as.numeric(names(ols)) ]
+  lapply(ols, function(rows) SE[ rows, ])
+} # }}}
 
-## for testing cpg smoothing
-fakeProbes <- function(x) {
-  matrix(rbeta(x^2, 2, 6.7), ncol=x)
-}
-
-## as above
-fakeWeights <- function(x) {
-  require(Matrix)
-  Matrix(cor(matrix(rbeta(x^2, 2, 6.7), ncol=x)))
-}
-
-## as above
-fakeNAs <- function(tmp, prop=0.2) {
-  is.na(tmp) <- matrix(rbinom(ncol(tmp)*nrow(tmp), 1, prop), ncol=ncol(tmp))==1
-  tmp
-}
-
-## for testing combine() -- works like a charm now
-GEO.colData <- function(x) {
+## for testing combine(SE, SE)
+GEO.colData <- function(x) { # {{{
   colData(x)[ , grep('(characteristics|title)', names(colData(x)))]
-}
+} # }}}
 
-## for testing combine() -- see above, working well now
-min.colData <- function(x) {
+## for testing combine(SE, SE)
+min.colData <- function(x) { # {{{
   colData(x)[ , grep('(title|histology|age|celltype|status|gender)', 
                      names(colData(x))) ]
-}
+} # }}}
