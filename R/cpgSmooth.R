@@ -32,7 +32,7 @@ smoothSites <- function(tmp, wts) {
 }
 
 ## sparse matrix multiplication for exponential smoothing
-cpgSmooth <- function (SE, assay=NULL, w=NULL, decay=1000, assay=NULL) {
+cpgSmooth <- function (SE, assay=NULL, w=NULL, decay=1000) {
   assay <- chooseAssay(SE, assay)
   SE <- sort(SE) 
   GR <- rowData(SE)
