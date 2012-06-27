@@ -1,38 +1,48 @@
-getWeight <- function(x, GR, decay=1000) {
-  raw = 1-log((distance(GR[queryHits(x)], GR[subjectHits(x)])+1), base=decay)
-  names(raw) <- names(GR)[subjectHits(x)]
-  raw / sum(raw) # normalized
-}
+## this has simplified quite a bit
+cpgWeights <- function(SE, decay=1000) { # {{{
+  require(Matrix)
+  if(length(unique(seqnames(rowData(SE))))>1) stop('One chromosome at a time!')
+  d <- dist(start(rowData(SE)), upper=TRUE, diag=TRUE)
+  wts <- 1 - log( as.matrix(dist(start(rowData(SE)), upper=T, diag=T)) + 1, 
+                  base=decay )
+  rownames(wts) <- rownames(SE)
+  colnames(wts) <- rownames(SE)
+  wts[ wts < 0 ] <- 0
+  Matrix(wts) # sparse
+} # }}}
+
+## weight NAs as zeros and normalize; results in sparser, per-sample weights
+adjWts <- function(vec, wts) { # {{{
+  require(matrixStats)
+  empty <- which(is.na(vec))
+  if(any(empty)) wts[empty, ] <- wts[, empty] <- 0
+  Matrix(apply(wts, 2, function(x) {
+    div = sum(x)
+    if(div == 0) return(x)
+    else return(x / div)
+  }))
+} # }}}
 
 ## FIXME: do the whole thing via matrices
-reWeightCpG <- function(x, tmp, idx, wts) {
-  return(t(t(tmp[subjectHits(idx[[x]]), , drop = F]) %*% wts[[x]]))
+smoothSites <- function(tmp, wts) {
+  emptyCells <- is.na(tmp)
+  for(i in 1:ncol(tmp)) tmp[,i] <- as.numeric(tmp[,i] %*% adjWts(tmp[,i], wts))
+  is.na(tmp) <- emptyCells
+  return(tmp)
 }
 
-## FIXME: use a large matrix, not a list
-cpgWeight <- function (SE, decay=1000) {
+## sparse matrix multiplication for exponential smoothing
+cpgSmooth <- function (SE, assay=NULL, w=NULL, decay=1000, assay=NULL) {
+  assay <- chooseAssay(SE, assay)
+  SE <- sort(SE) 
   GR <- rowData(SE)
-  ol <- findOverlaps(resize(GR, 2*decay, fix="center"), GR)
-  idx <- split(ol, queryHits(ol))
-  names(idx) <- names(GR)[ queryHits(ol) ]
-  wts <- lapply(idx, getWeight, GR=GR, decay=decay)
-  return(list(wts=wts, idx=idx))
-}
-
-## FIXME: use matrix multiplication to obtain the reweighted values
-cpgSmooth <- function (SE, w=NULL, decay=1000, assay=NULL, impute=T) {
-  require(impute)
-  GR <- rowData(SE)
-  if(is.null(assay)) assay = names(assays(SE, withDimnames = F))[[1]]
-  if(length(unique(seqnames(rowData(SE)))) > 1) message('You CAN split by chr!')
-  if(is.null(w)) w <- cpgWeight(SE, decay=decay)
-  idx <- w$idx
-  wts <- w$wts
-  tmp <- assays(SE, F)[[assay]]
-  if(impute == TRUE && anyMissing(tmp)) tmp <- impute.knn(tmp)$data
-  print(paste('Smoothing', unique(seqnames(rowData(SE))), '...'))
-  smoothed <- do.call(rbind, lapply(names(idx), 
-                                    reWeightCpG, tmp=tmp, idx=idx, wts=wts))
+  if(length(unique(seqnames(rowData(SE)))) > 1) stop('Please split by chrom!')
+  if(is.null(w)) wts <- cpgWeights(SE, decay=decay)
+  print(paste('Smoothing', unique(seqnames(rowData(SE))), 
+              paste0('(', nrow(SE), 'features)...')))
+  smoothed <- smoothSites(asy.fast(SE, assay), wts)
   rownames(smoothed) <- rownames(SE)
-  return(smoothed)
+  colnames(smoothed) <- colnames(SE)
+  assays(SE)[[1]] <- smoothed
+  return(SE)
 }

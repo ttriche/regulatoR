@@ -8,47 +8,47 @@ setAs("MIAME", "SimpleList",
 ) # }}}
 
 ## this will eventually require a better approach
-setAs("ExpressionSet", "SummarizedExperiment",
-  function(from) { # {{{
-    if(grepl('^GPL', annotation(from))) {
-      message('This coercion expects to find at least an Entrez ID via fData()')
-      if( all( c('CHR','MAPINFO') %in% fvarLabels(from)) ) {
-        fdat <- fData(from)[, c('ID','CHR','MAPINFO','MAPINFO') ]
-        names(fdat) <- c('name','chrom','chromStart','chromEnd')
-        fdat[, 3:4] <- apply(fdat[, 3:4], 2, as.numeric)
-        row.dat <- df2GR(fdat)
-      } else {
-        stop(paste("Don't know how to handle platform", annotation(from)))
-      }
+eSetToSE <- function(from) { # {{{
+  if(grepl('^GPL', annotation(from))) {
+    message('This coercion expects to find at least an Entrez ID via fData()')
+    if( all( c('CHR','MAPINFO') %in% fvarLabels(from)) ) {
+      fdat <- fData(from)[, c('ID','CHR','MAPINFO','MAPINFO') ]
+      names(fdat) <- c('name','chrom','chromStart','chromEnd')
+      fdat[, 3:4] <- apply(fdat[, 3:4], 2, as.numeric)
+      row.dat <- df2GR(fdat)
     } else {
-      chip <- annotation(from)
-      require(paste(chip, "db", sep = "."), character.only=TRUE)
-      starts <- unlist(lapply(mget(featureNames(from), 
-                                   envir=get(paste0(chip, 'CHRLOC'))), 
-                              function(x) x[[1]]))
-      ends   <- unlist(lapply(mget(featureNames(from), 
-                                   envir=get(paste0(chip, 'CHRLOCEND'))), 
-                              function(x) x[[1]]))
-      chrs   <- unlist(lapply(mget(featureNames(from), 
-                                   envir=get(paste0(chip, 'CHR'))), 
-                              function(x) x[[1]]))
-      strand <- ifelse(sign(starts) == '-1', '-', '+')
-      toGR <- data.frame(chrom=chrs, chromStart=abs(starts), chromEnd=abs(ends),
-                         strand=strand, name=featureNames(from))
-      flipped <- which(abs(toGR$chromStart)>abs(toGR$chromEnd)) 
-      toGR[ flipped, c('chromEnd','chromStart') ] <- 
-        abs(toGR[ flipped, c('chromStart','chromEnd') ])
-      row.dat <- df2GR(toGR)
+      stop(paste("Don't know how to handle platform", annotation(from)))
     }
-    
-    asy.dat <- SimpleList()
-    asy.dat$exprs = assayDataElement(from, 'exprs')[names(row.dat), ]
-    SummarizedExperiment(assays=asy.dat,
-                         rowData=row.dat,
-                         colData=as(pData(from), 'DataFrame'),
-                         exptData=as(experimentData(from), 'SimpleList'))
+  } else {
+    chip <- annotation(from)
+    require(paste(chip, "db", sep = "."), character.only=TRUE)
+    starts <- unlist(lapply(mget(featureNames(from), 
+                                 envir=get(paste0(chip, 'CHRLOC'))), 
+                            function(x) x[[1]]))
+    ends   <- unlist(lapply(mget(featureNames(from), 
+                                 envir=get(paste0(chip, 'CHRLOCEND'))), 
+                            function(x) x[[1]]))
+    chrs   <- unlist(lapply(mget(featureNames(from), 
+                                 envir=get(paste0(chip, 'CHR'))), 
+                            function(x) x[[1]]))
+    strand <- ifelse(sign(starts) == '-1', '-', '+')
+    toGR <- data.frame(chrom=chrs, chromStart=abs(starts), chromEnd=abs(ends),
+                       strand=strand, name=featureNames(from))
+    flipped <- which(abs(toGR$chromStart)>abs(toGR$chromEnd)) 
+    toGR[ flipped, c('chromEnd','chromStart') ] <- 
+      abs(toGR[ flipped, c('chromStart','chromEnd') ])
+    row.dat <- df2GR(toGR)
+  }
+  
+  asy.dat <- SimpleList()
+  asy.dat$exprs = assayDataElement(from, 'exprs')[names(row.dat), ]
+  SummarizedExperiment(assays=asy.dat,
+                       rowData=row.dat,
+                       colData=as(pData(from), 'DataFrame'),
+                       exptData=as(experimentData(from), 'SimpleList'))
+}
 
-  }) # }}}
+setAs("ExpressionSet", "SummarizedExperiment", function(from) eSetToSE(from)) 
       
 if(require(methylumi)) { ## this is going into MethyLumi anyhow
   msetToSE <- function(from) { # {{{
