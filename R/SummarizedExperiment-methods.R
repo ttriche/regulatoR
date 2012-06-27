@@ -30,8 +30,8 @@ setMethod("combine", signature=signature(x="SummarizedExperiment", y="Summarized
                   length(intersect(rownames(x), rownames(y))) < nrow(y) ) {
                 stop("Error: x and y have differing features, cannot combine")
               }
-              commonAsys <- intersect(names(assays(x, withDimnames=FALSE)),
-                                      names(assays(y, withDimnames=FALSE))) 
+              commonAsys <- intersect(names(x@assays), names(y@assays))
+              names(commonAsys) <- commonAsys
               if(length(commonAsys) < 1) stop('No assays in common...')
               commonCols <- intersect(names(colData(x)),
                                       names(colData(y)))
