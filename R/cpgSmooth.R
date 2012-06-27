@@ -1,14 +1,12 @@
 ## this has simplified quite a bit
 cpgWeights <- function(SE, decay=1000) { # {{{
   require(Matrix)
-  if(length(unique(seqnames(rowData(SE))))>1) stop('One chromosome at a time!')
-  d <- dist(start(rowData(SE)), upper=TRUE, diag=TRUE)
-  wts <- 1 - log( as.matrix(dist(start(rowData(SE)), upper=T, diag=T)) + 1, 
-                  base=decay )
+  if(length(unique(seqnames(rowData(SE))))>1) stop("One chromosome at a time!")
+  z = start(rowData(SE))
+  wts = Matrix(1-log(sapply(z, function(x) pmin(abs(x-z)+1,decay)), base=decay))
   rownames(wts) <- rownames(SE)
   colnames(wts) <- rownames(SE)
-  wts[ wts < 0 ] <- 0
-  Matrix(wts) # sparse
+  return(wts)
 } # }}}
 
 ## weight NAs as zeros and normalize; results in sparser, per-sample weights

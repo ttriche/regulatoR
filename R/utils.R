@@ -50,3 +50,14 @@ fakeNAs <- function(tmp, prop=0.2) {
   is.na(tmp) <- matrix(rbinom(ncol(tmp)*nrow(tmp), 1, prop), ncol=ncol(tmp))==1
   tmp
 }
+
+## for testing combine() -- works like a charm now
+GEO.colData <- function(x) {
+  colData(x)[ , grep('(characteristics|title)', names(colData(x)))]
+}
+
+## for testing combine() -- see above, working well now
+min.colData <- function(x) {
+  colData(x)[ , grep('(title|histology|age|celltype|status|gender)', 
+                     names(colData(x))) ]
+}
