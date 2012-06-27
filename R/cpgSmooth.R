@@ -41,12 +41,12 @@ smoothSites <- function(tmp, wts, keep.NAs=FALSE) { # {{{
 } # }}}
 
 ## sparse matrix multiplication for exponential smoothing
-cpgSmooth <- function (SE, assay=NULL, w=NULL, decay=1000, keep.NAs=FALSE){ #{{{
+cpgSmooth <- function (SE, assay=NULL, wts=NULL, decay=1000, keep.NAs=F){ #{{{
   assay <- chooseAssay(SE, assay)
   SE <- sort(SE) 
   GR <- rowData(SE)
   if(length(unique(seqnames(rowData(SE)))) > 1) stop('Please split by chrom!')
-  if(is.null(w)) wts <- cpgWeights(SE, decay=decay)
+  if(is.null(wts)) wts <- cpgWeights(SE, decay=decay)
   print(paste('Smoothing', unique(seqnames(rowData(SE))), 
               paste0('(', nrow(SE), 'features)...')))
   smoothed <- smoothSites(asy.fast(SE, assay), wts, keep.NAs=keep.NAs)
