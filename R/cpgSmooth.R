@@ -2,10 +2,21 @@
 cpgWeights <- function(SE, decay=1000) { # {{{
   require(Matrix)
   if(length(unique(seqnames(rowData(SE))))>1) stop("One chromosome at a time!")
-  z = start(rowData(SE))
-  wts = Matrix(1-log(sapply(z, function(x) pmin(abs(x-z)+1,decay)), base=decay))
-  rownames(wts) <- rownames(SE)
-  colnames(wts) <- rownames(SE)
+  wts <- Matrix(0, ncol=nrow(SE), nrow=nrow(SE))
+  diag(wts) <- 1
+  rownames(wts) <- colnames(wts) <- rownames(SE)
+  ol <- findOverlaps(rowData(SE), resize(rowData(SE), 2*decay, fix='center'))
+  idx <- split(subjectHits(ol), queryHits(ol))
+  for(i in seq_len(length(idx))) { ## this should go in C
+    if(length(idx[[i]]) > 1) {
+      msg <- paste('Computing weights for feature', i, 'of', length(idx))
+      message(paste0(msg, ' (', round(100*(i/length(idx))), '%)...'))
+      nonzero <- idx[[i]]
+      z <- start(rowData(SE)[idx[[i]]])
+      subwts <- 1 - log(1+abs(sapply(z, '-', z)), base=decay)
+      wts[ nonzero, nonzero ] <- subwts
+    }
+  }
   return(wts)
 } # }}}
 
@@ -22,15 +33,15 @@ adjWts <- function(vec, wts) { # {{{
 } # }}}
 
 ## FIXME: do the whole thing via matrices
-smoothSites <- function(tmp, wts) {
+smoothSites <- function(tmp, wts, keep.NAs=FALSE) { # {{{
   emptyCells <- is.na(tmp)
   for(i in 1:ncol(tmp)) tmp[,i] <- as.numeric(tmp[,i] %*% adjWts(tmp[,i], wts))
-  is.na(tmp) <- emptyCells
+  if(keep.NAs) is.na(tmp) <- emptyCells
   return(tmp)
-}
+} # }}}
 
 ## sparse matrix multiplication for exponential smoothing
-cpgSmooth <- function (SE, assay=NULL, w=NULL, decay=1000) {
+cpgSmooth <- function (SE, assay=NULL, w=NULL, decay=1000, keep.NAs=FALSE){ #{{{
   assay <- chooseAssay(SE, assay)
   SE <- sort(SE) 
   GR <- rowData(SE)
@@ -38,9 +49,9 @@ cpgSmooth <- function (SE, assay=NULL, w=NULL, decay=1000) {
   if(is.null(w)) wts <- cpgWeights(SE, decay=decay)
   print(paste('Smoothing', unique(seqnames(rowData(SE))), 
               paste0('(', nrow(SE), 'features)...')))
-  smoothed <- smoothSites(asy.fast(SE, assay), wts)
+  smoothed <- smoothSites(asy.fast(SE, assay), wts, keep.NAs=keep.NAs)
   rownames(smoothed) <- rownames(SE)
   colnames(smoothed) <- colnames(SE)
   assays(SE)[[1]] <- smoothed
   return(SE)
-}
+} # }}}
