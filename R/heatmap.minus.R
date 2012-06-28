@@ -27,7 +27,8 @@ coolmap <- function(SE1,
                           'RUNX1.RUNX1T1','CBFB.MYH11','PML.RARA','NUP98.NSD1'),
                     normals=c('disease'),
                     col=ley.colors(255),
-                    logit=FALSE) 
+                    logit=FALSE,
+                    ...) 
 { # {{{
 
   require(impute)
@@ -47,13 +48,17 @@ coolmap <- function(SE1,
   z <- t(getMatrix(SE1, mut))
   if(!is.null(SE2)) z2 <- t(getMatrix(SE2, normals))
 
-  hfun <- function(w) hclust(w, method=method)
+  hf <- function(w) hclust(w, method=method)
   
   if(logit) x <- logit(x)
   if(logit && !is.null(x2)) x2 <- logit(x2)
-  heatmap.minus(x=x, x2=x2, ColSideColors=z, ColSideColors2=z2, col=col, 
-                hclustfun=hfun, scale='none', Rdend=FALSE, Cdend=FALSE )
-
+  
+  if(is.null(SE2)) {
+    heatmap.minus(x=x, ColSideColors=z, col=col, hclustfun=hf, scale='none',...)
+  } else { 
+    heatmap.minus(x=x, x2=x2, ColSideColors=z, ColSideColors2=z2, col=col, 
+                 hclustfun=hf, scale='none', ... )
+  }
 } # }}}
 
 # one indicator, getBar(SE, 'covariate') OR getBar(SE$covariate) will work too
