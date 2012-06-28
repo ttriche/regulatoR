@@ -1,5 +1,4 @@
-seByArm <-
-function(SE, GRorGRL=NULL, build='hg19') {
+seByArm <- function(SE, GRorGRL=NULL, build='hg19') {
   stopifnot(is(SE, 'SummarizedExperiment'))
   if(!is.null(GRorGRL)) {
     stopifnot(unique(genome(GRorGRL)) == build)
@@ -9,6 +8,9 @@ function(SE, GRorGRL=NULL, build='hg19') {
     data(hg19.by.arm)
     GRorGRL <- hg19.by.arm
   }
-  if(is(GRorGRL, 'GRanges')) GRL <- split(GRorGRL) else GRL <- GRorGRL
-  lapply(GRL, function(x) SE[ names(subsetByOverlaps(rowData(SE), x)), ])
+  if(is(GRorGRL, 'GRanges')) GRL <- split(GRorGRL) 
+  else GRL <- GRorGRL
+  lapply(subsetByOverlaps(GRL, rowData(SE)), function(x) {
+         SE[ names(subsetByOverlaps(rowData(SE), x)), ]
+  })
 }

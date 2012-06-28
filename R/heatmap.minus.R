@@ -10,18 +10,94 @@
 #        other alterations?
 ###############################################################################
 
-# one indicator
-getBar <- function(SE, name, col1='gray', col2='black', col3=NULL) { # {{{
-  if(is.logical(colData(SE)[[name]])) ifelse(colData(SE)[[name]], col2, col1)
-  else ifelse(colData(SE)[[name]] %in% c('',' '), col1, col2)
+# traditional
+jet.colors <- colorRampPalette(c("#00007F","blue","#007FFF","cyan","#7FFF7F", 
+                                 "yellow", "#FF7F00", "red", "#7F0000"))
+
+# TimLeytional
+ley.colors <- colorRampPalette(c("white","black"))
+
+# how lazy am I?  so lazy.
+coolmap <- function(SE1,
+                    SE2=NULL,
+                    how='sd',
+                    howmany=1000,
+                    method='ward',
+                    mut=c('DNMT3A','NPM1','IDH','FLT3','TP53','MLL','RUNX1',
+                          'RUNX1.RUNX1T1','CBFB.MYH11','PML.RARA','NUP98.NSD1'),
+                    normals=c('disease'),
+                    col=ley.colors(255),
+                    logit=FALSE) 
+{ # {{{
+
+  require(impute)
+  fetchby <- function(SE, how, howmany) { # {{{
+    asy.fast(switch(how, sd=by.sd(SE, howmany), 
+                         mad=by.mad(SE, howmany), 
+                         sdmax=by.sdSdMax(SE, howmany)))
+  } # }}}
+  x <- x2 <- NULL
+  x <- fetchby(SE1, how, howmany)
+  if(anyMissing(x)) x <- impute.knn(x)$data
+
+  if(!is.null(SE2)) x2 <- fetchby(SE2, how, howmany)
+  if(!is.null(SE2) && anyMissing(x2)) x2 <- impute.knn(x2)$data
+
+  z <- z2 <- NULL
+  z <- t(getMatrix(SE1, mut))
+  if(!is.null(SE2)) z2 <- t(getMatrix(SE2, normals))
+
+  hfun <- function(w) hclust(w, method=method)
+  
+  if(logit) x <- logit(x)
+  if(logit && !is.null(x2)) x2 <- logit(x2)
+  heatmap.minus(x=x, x2=x2, ColSideColors=z, ColSideColors2=z2, col=col, 
+                hclustfun=hfun, scale='none', Rdend=FALSE, Cdend=FALSE )
+
 } # }}}
 
-# multiple indicators
+# one indicator, getBar(SE, 'covariate') OR getBar(SE$covariate) will work too
+getBar <- function(SE, name=NULL, col1='#9F9FA3',col2='#000000',col3=NULL){# {{{
+  if(is(SE, 'SummarizedExperiment')) x <- colData(SE)[[name]]
+  else x <- SE ## usually will be SE$somthing instead
+  if(is.logical(x)) ifelse(colData(SE)[[name]], col2, col1)
+  else ifelse(x %in% c('',' '), col1, col2)
+} # }}}
+
 getMatrix <- function(SE, names, col1='gray', col2='black', col3=NULL) { # {{{
   mat = do.call(rbind, lapply(names, function(x) getBar(SE, x, col1,col2,col3)))
   colnames(mat) <- colnames(SE)
   rownames(mat) <- names
   return(mat)
+} # }}}
+
+rowSdSdMax <- function(x, assay=NULL) { # {{{
+  require(matrixStats)
+  if(is(x, 'SummarizedExperiment')) x <- asy.fast(x, assay)
+  return(rowSds(x,na.rm=T)/sqrt(rowMeans(x,na.rm=T)/(1-(rowMeans(x, na.rm=T)))))
+} # }}}
+
+by.sd <- function(SE, howmany=1000, assay=NULL) { # {{{
+  if(!('sd' %in% names(values(rowData(SE))))) {
+    require(matrixStats)
+    values(rowData(SE))$sd <- rowSds(asy.fast(SE, assay), na.rm=TRUE)
+  }
+  return(SE[ head(order(values(rowData(SE))$sd, decreasing=TRUE), howmany), ])
+} # }}}
+
+by.sdSdMax <- function(SE, howmany=1000, assay=NULL) { # {{{
+  if(!('sdSdMax' %in% names(values(rowData(SE))))) {
+    values(rowData(SE))$sdSdMax <- rowSdSdMax(asy.fast(SE, assay))
+  }
+  return(SE[head(order(values(rowData(SE))$sdSdMax,decreasing=TRUE), howmany),])
+} # }}}
+
+by.mad <- function(SE, howmany=1000, assay=NULL) { # {{{
+  if(!('mad' %in% names(values(rowData(SE))))) {
+    require(matrixStats)
+    values(rowData(SE))$mad <- rowMads(asy.fast(SE, assay), na.rm=TRUE)
+  }
+  return(SE[ head(order(values(rowData(SE))$mad, decreasing=TRUE), howmany), ])
 } # }}}
 
 # x is tumor, x2 is normal
@@ -178,9 +254,8 @@ heatmap.minus<-function(x,
 		x <- sweep(x, 2, sx, "/")
 	}
 	lmat <- rbind(c(NA, 3), c(2:1))
-	lwid <- c(if (Rdend) 1 else 0.25, 4)
-	lhei <- c((if (Cdend) 1 else 0.05), 
-			4)
+	lwid <- c(ifelse(Rdend, 1, 0.25), 4)
+	lhei <- c(ifelse(Cdend, 1, 0.25), 4)
 	if (!missing(ColSideColors)) {
 		if (!is.matrix(ColSideColors)) 
 			stop("'ColSideColors' must be a matrix")
@@ -203,14 +278,11 @@ heatmap.minus<-function(x,
 	if(!is.null(x2)){
 		lmat <- cbind(lmat,c(rep(NA,nrow(lmat)-1),max(lmat,na.rm=T)+1))
 		lwid <- c(lwid,4*ratio)
-		
 	}
 	lmat[is.na(lmat)] <- 0
 		if (!missing(ColSideColors2)) {
 		lmat [which.max(lmat)-1]<- max(lmat)+1
-			}
-	
-	
+	}
 	
 	if (verbose) {
 		cat("layout: widths = ", lwid, ", heights = ", lhei, 
@@ -314,6 +386,7 @@ heatmap.minus<-function(x,
 		
 		x2.ordered<-as.matrix(x2[newrow,newcol])
 		nc2<-dim(x2)[2]
+    browser()
 		image(1:nc2, 1:nr, t(x2.ordered), xlim =0.5+c(0, nc2), ylim = 0.5+c(0, nr), axes = FALSE,xlab = "", ylab = "",col=col,...)
 		#axis(1, 1:nc2, labels = FALSE, las = 2, line = -0.5, tick = 0) #, cex.axis = cexCol)
 	#text(c(1:nc2), 1, labels = colnames(x2)[newcol], srt = colLabSrt, adj=c(1.5,1.5), xpd=TRUE, offset=2, font=2,cex=cexCol)
