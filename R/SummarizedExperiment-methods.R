@@ -30,18 +30,17 @@ setMethod("combine", signature=signature(x="SummarizedExperiment", y="Summarized
                   length(intersect(rownames(x), rownames(y))) < nrow(y) ) {
                 stop("Error: x and y have differing features, cannot combine")
               }
+              browser()
               commonAsys <- intersect(names(x@assays), names(y@assays))
               names(commonAsys) <- commonAsys
-              if(length(commonAsys) < 1) stop('No assays in common...')
-              commonCols <- intersect(names(colData(x)),
-                                      names(colData(y)))
+              if(length(commonAsys) < 1) stop('Error: no assays in common')
               combineAssay <- function(assay, x, y) {
                 cbind( assays(x, withDimnames=F)[[assay]],
                        assays(y[rownames(x), ], withDimnames=F)[[assay]] )
               }
               SummarizedExperiment(
                 assays=lapply(commonAsys, combineAssay, x=x, y=y),
-                colData=rbind(colData(x)[,commonCols], colData(y)[,commonCols]),
+                colData=merge(colData(x), colData(y), all=TRUE),
                 rowData=rowData(x)
               )
           }) # }}}

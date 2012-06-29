@@ -31,9 +31,10 @@ getXplots<-function(x, nProbes=500, col.fun='jet', clinical=NULL){
                           ColIndividualColors=colSide, color.FUN=get(col.fun), 
                           dendrogram='none', kc=2, labCol=colnames(x), 
                           labRow=Xprobes, Colv=T, Rowv=TRUE,
-                          main=paste('chrX clustering for', name)))$col.clusters
+                          main=paste('chrX clustering for', name)))
   })
-  clusts <- as.factor(clusts)
+  sex <- clusts$col.clusters
+  sex[clusts$colInd] <- sex
   message('Assigned chrX cluster (assuming this is DNA methylation data):')
-  return(clusts)
+  return(gsub(1,'M', gsub('2','F', sex)))
 }
