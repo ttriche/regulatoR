@@ -1,19 +1,37 @@
+setMethod("[", c("SummarizedExperiment", "GenomicRanges", "ANY"), function(x, i, j, ..., drop=TRUE) { # {{{
+  if (1L != length(drop) || (!missing(drop) && drop))
+    warning("'drop' ignored '[,SummarizedExperiment,GenomicRanges,ANY-method'")
+  if (missing(i) && missing(j)) x
+  else if (missing(i)) x[ , j]
+  else if (missing(j)) subsetByOverlaps(x, i, ...)
+  else subsetByOverlaps(x[,j], i, ...)
+}) # }}}
+
 setMethod("$", "SummarizedExperiment", function(x, name) { # {{{
   return(colData(x)[[name, exact=FALSE]])
 }) # }}}
+
+setMethod("$", "SummarizedExperiment", function(x, name) { # {{{
+  return(colData(x)[[name, exact=FALSE]])
+}) # }}}
+
 setMethod("$<-", "SummarizedExperiment", function(x, name, value) { # {{{
   colData(x)[[ name ]] <- value
   return(x)
 }) # }}}
+
 setMethod("sort", signature(x="SummarizedExperiment"), function(x) { # {{{ 
   x[ names(sort(rowData(x))), ] 
 }) # }}}
+
 setMethod("genome", signature(x="SummarizedExperiment"), function(x) { # {{{ 
   genome(rowData(x))
 }) # }}}
+
 setMethod("seqinfo", signature(x="SummarizedExperiment"), function(x) { # {{{ 
   seqinfo(rowData(x))
 }) # }}}
+
 setMethod("combine", signature=signature(x="SummarizedExperiment", y="SummarizedExperiment"), function(x, y, ...) { # {{{
               if (class(x) != class(y)) {
                 stop(paste("Error: objects must be the same class, but are ",
