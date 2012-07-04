@@ -3,8 +3,8 @@ setMethod("[", c("SummarizedExperiment", "GenomicRanges", "ANY"), function(x, i,
     warning("'drop' ignored '[,SummarizedExperiment,GenomicRanges,ANY-method'")
   if (missing(i) && missing(j)) x
   else if (missing(i)) x[ , j]
-  else if (missing(j)) subsetByOverlaps(x, i, ...)
-  else subsetByOverlaps(x[,j], i, ...)
+  else if (missing(j)) x[ queryHits(findOverlaps(rowData(x), i)), ]
+  else x[ queryHits(findOverlaps(rowData(x), i)), j]
 }) # }}}
 
 setMethod("$", "SummarizedExperiment", function(x, name) { # {{{
