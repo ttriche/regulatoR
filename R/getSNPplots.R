@@ -22,19 +22,25 @@ getSNPplots<-function(x, individuals=NULL, rotate=TRUE, col.fun='SNP') {
   	  clusts <- suppressWarnings(heatmap.3(t(tmp), scale="none", trace="none", 
                                  color.FUN=get(col.fun), dendrogram='none', 
                                  labCol=snps, kr=individuals, Colv=T, Rowv=T, 
-                                 labRow=colnames(x), main=heading))$row.clusters
+                                 labRow=colnames(x), main=heading))
+      clusts$clusters <- clusts$row.clusters
+      clusts$ind <- clusts$rowInd
     }) # }}}
   } else { 
 	  capture.output({ # {{{
   	  clusts <- suppressWarnings(heatmap.3(tmp, scale="none", trace="none", 
                                  color.FUN=get(col.fun), dendrogram='none', 
                                  labRow=snps, kc=individuals, Colv=T, Rowv=T, 
-                                 labCol=colnames(x), main=heading))$col.clusters
+                                 labCol=colnames(x), main=heading))
+      clusts$clusters <- clusts$col.clusters
+      clusts$ind <- clusts$colInd
     }) # }}}
   }
-  clusts <- as.factor(clusts)
-  message('Assigned SNP cluster for each sample:')
-  return(clusts)
+  individual <- clusts$clusters
+  individual[clusts$ind] <- individual
+  individual <- as.factor(individual)
+  message('Assigned identity for each sample:')
+  return(individual)
 }
 
 

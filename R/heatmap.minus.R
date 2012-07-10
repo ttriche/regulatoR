@@ -20,6 +20,9 @@ exp.colors <- colorRampPalette(c("green","black","red"))
 # Age
 age.colors <- colorRampPalette(c("green","yellow","red"))
 
+# accessibility
+dgf.colors <- colorRampPalette(c("blue","white","red"))
+
 # one indicator, getBar(SE, 'covariate') OR getBar(SE$covariate) will work too
 getBar <- function(SE, name=NULL, col1='#9F9FA3',col2='#000000',col3=NULL){# {{{
   if(is(SE, 'SummarizedExperiment')) x <- colData(SE)[[name]]
@@ -39,6 +42,25 @@ getMatrix <- function(SE, names, col1='gray', col2='black', col3=NULL) { # {{{
   mat = do.call(rbind, lapply(names, function(x) getBar(SE, x, col1,col2,col3)))
   colnames(mat) <- colnames(SE)
   rownames(mat) <- names
+  return(mat)
+} # }}}
+
+getProbeBar <- function(SE, name=NULL, col1='#9F9FA3',col2='#000000') { # {{{
+  if(is(SE, 'SummarizedExperiment')) x <- values(rowData(SE))[[name]]
+  else x <- SE ## usually will be values(rowData(SE))$something instead
+  if(toupper(name)=='CPGI') {
+    ifelse(x=='island','darkgreen',ifelse(x=='shore','green','white'))
+  } else if(toupper(name) %in% c('OECG','DGF','CD34.DGF','LOG.DGF')) {
+    rev(dgf.colors(100))[x]
+  } else {
+    ifelse(values(rowData(SE))[[name]], col2, col1)
+  }
+} # }}}
+
+getProbeMatrix <- function(SE, names, col1='gray', col2='black') { # {{{
+  mat = do.call(cbind, lapply(names, function(x) getProbeBar(SE, x)))
+  rownames(mat) <- rownames(SE)
+  colnames(mat) <- names
   return(mat)
 } # }}}
 
@@ -77,15 +99,16 @@ coolmap <- function(SE1,
                     how='sd',
                     howmany=1000,
                     method='ward',
-                    mut=c('DNMT3A','NPM1','FLT3.ITD','WT1','MLL','NSD1',
-                          'IDH','RUNX1', 'TP53',
+                    mut=c('DNMT3A','NPM1','FLT3','MLL.R','NSD1',
+                          'IDH','TET','RUNX1', 'TP53',
                           'PML.RARA','CEBPA','AML.ETO','CBFB.MYH11',
                           'Age'),
-                    normal=c('CD34','OLD','ADULT','CHILD','NEWBORN','Age'),
+                    normal=c('PMN','CD3','CD34','CD19'),
                     col=jet.colors(255),
                     logit=FALSE,
                     Rdend=FALSE,
                     Cdend=FALSE,
+                    probeAnno=c('DGF','CPGI'),
                     ...) 
 { # {{{
 
@@ -102,6 +125,12 @@ coolmap <- function(SE1,
   x <- x2 <- NULL
   x <- fetchby(SE1, how, howmany)
   if(anyMissing(x)) x <- impute.knn(x)$data
+
+  if(!is.null(probeAnno)) {
+    RowSideColors = getProbeMatrix(SE1[rownames(x),], probeAnno)
+  } else {
+    RowSideColors = NULL
+  }
 
   if(!is.null(SE2)) {
     x2 <- asy.fast(SE2[ rownames(x), ])
@@ -121,10 +150,11 @@ coolmap <- function(SE1,
   
   if(is.null(SE2)) {
     heatmap.minus(x=x, ColSideColors=z, col=col, hclustfun=hf, scale='none',
-                  Rdend=Rdend, Cdend=Cdend, ...)
+                  Rdend=Rdend, Cdend=Cdend, RowSideColors=RowSideColors, ...)
   } else { 
     heatmap.minus(x=x, x2=x2, ColSideColors=z, ColSideColors2=z2, col=col, 
-                 hclustfun=hf, scale='none', Rdend=Rdend, Cdend=Cdend, ...)
+                 hclustfun=hf, scale='none', Rdend=Rdend, Cdend=Cdend, 
+                 RowSideColors=RowSideColors, ...)
   }
 } # }}}
 
@@ -150,6 +180,7 @@ heatmap.minus<-function(x,
                         na.rm = TRUE, 
                         margins = c(6, 6),
                         sidemar = 0.5, 
+                        splitmar = 2,
                         col = jet.colors(75),
                         ColSideColors, 
                         ColSideColors2,
@@ -397,7 +428,7 @@ heatmap.minus<-function(x,
 	invisible(list(rowInd = rowInd, colInd = colInd, Rowv = if (keep.dendro && 
 							doRdend) ddr, Colv = if (keep.dendro && doCdend) ddc))
 	if (!is.null(x2)){
-		par(mar=c(margins[1],5,sidemar,margins[2]))
+		par(mar=c(margins[1], splitmar, sidemar,margins[2]))
 		rownames.ordered<-row.x[rowInd]
 		newrow<-rownames.ordered
 		hcc2 <- hclustfun(distfun(if (symm) 
@@ -417,7 +448,7 @@ heatmap.minus<-function(x,
 	}
 	
 	if (!missing(ColSideColors2)) {
-		par(mar = c(0.5,5, 0, margins[2]))
+		par(mar = c(0.5, splitmar, 0, margins[2]))
 		csc = ColSideColors2[newcol, ]
 		csc.colors = matrix()
 		csc.names = names(table(csc))
