@@ -5,9 +5,6 @@
 # Project Name: Hui_PhD_Analysis
 ###############################################################################
 # Edits: tim, tim.triche@usc.edu
-# What:  move lesions matrix to bottom
-#        switch to WashU color scheme
-#        other alterations?
 ###############################################################################
 
 # traditional
@@ -17,13 +14,25 @@ jet.colors <- colorRampPalette(c("#00007F","blue","#007FFF","cyan","#7FFF7F",
 # TimLeytional
 ley.colors <- colorRampPalette(c("white","black"))
 
+# Expression
+exp.colors <- colorRampPalette(c("green","black","red"))
+
+# Age
+age.colors <- colorRampPalette(c("green","yellow","red"))
+
 # one indicator, getBar(SE, 'covariate') OR getBar(SE$covariate) will work too
 getBar <- function(SE, name=NULL, col1='#9F9FA3',col2='#000000',col3=NULL){# {{{
   if(is(SE, 'SummarizedExperiment')) x <- colData(SE)[[name]]
   else x <- SE ## usually will be SE$somthing instead
-  if(toupper(name)=='GENDER') ifelse(colData(SE)$gender=='M','lightblue','pink')
-  else if(is.logical(x)) ifelse(colData(SE)[[name]], col2, col1)
-  else ifelse(x %in% c('',' '), col1, col2)
+  if(toupper(name)=='GENDER') {
+    ifelse(colData(SE)[[name]]=='M','lightblue','pink')
+  } else if(toupper(name)=='AGE') {
+    age.colors(100)[colData(SE)[[name]]]
+  } else if(is.logical(x)) {
+    ifelse(colData(SE)[[name]], col2, col1)
+  } else {
+    ifelse(x %in% c('',' '), col1, col2)
+  }
 } # }}}
 
 getMatrix <- function(SE, names, col1='gray', col2='black', col3=NULL) { # {{{
@@ -68,10 +77,11 @@ coolmap <- function(SE1,
                     how='sd',
                     howmany=1000,
                     method='ward',
-                    mut=c('DNMT3A','NPM1','FLT3','MLL','IDH','WT1','TP53',
-                          'MLLT10','RUNX1','PML.RARA','AML.ETO','CBFB.MYH11',
-                          'NUP98.NSD1'),
-                    normal=c('MARROW','OLD','ADULT','CHILD','NEWBORN'),
+                    mut=c('DNMT3A','NPM1','FLT3.ITD','WT1','MLL','NSD1',
+                          'IDH','RUNX1', 'TP53',
+                          'PML.RARA','CEBPA','AML.ETO','CBFB.MYH11',
+                          'Age'),
+                    normal=c('CD34','OLD','ADULT','CHILD','NEWBORN','Age'),
                     col=jet.colors(255),
                     logit=FALSE,
                     Rdend=FALSE,

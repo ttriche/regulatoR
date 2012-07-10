@@ -1,4 +1,4 @@
-require(Repitools) ## for genomeBlocks()
+require(Repitools) ## for featureBlocks()
 
 ## genomeBlocks carves things up nicely:
 ## sl <- na.omit(seqlengths(rowData(SE)))
@@ -25,8 +25,8 @@ binByFeature <- function(SE, features, assay=NULL, size=100, n=1, trim=0.01) {
   summarizeBinned(SE, featBinned, assay=assay)    
 }
 
-## equal sized binned blocks for regression modeling e.g. exprs ~ meth + CNV
-featureBins <- function(x,size=100,up=1500,down=100,body=F,enh=T,dist=250000){
+## equal sized binned blocks for regression modeling e.g. exprs ~ meth*CNV*sub
+featureBins<-function(x,size=100,up=1500,down=100,body=F,enh=T,dist=250000){#{{{
   y <- resize(x, size, fix='start') ## first bin 
   for(i in seq_len(up/size)) y <- c(flank(y[1], size), y)
   for(i in seq_len(down/size)) y <- c(y, flank(y[1], size, FALSE))
@@ -38,25 +38,30 @@ featureBins <- function(x,size=100,up=1500,down=100,body=F,enh=T,dist=250000){
   if(enh==TRUE) {   ## should make it so this can be supplied instead
     if(unique(na.omit(genome(x)))!='hg19') stop("Don't have enhancers for hg18")
     if(!exists('REFSEQ.TES.HG19')) data(REFSEQ.TES.HG19)
-    up.enhs <- resize(subsetByOverlaps(REFSEQ.TES.HG19, flank(x,dist)), 
-                      fix='center', size)
-    dn.enhs <- resize(subsetByOverlaps(REFSEQ.TES.HG19, flank(x,dist,F)),
-                      fix='center', size)
-    y <- c(up.enhs, y, dn.enhs)
+    up.enhs <- subsetByOverlaps(REFSEQ.TES.HG19, flank(x,dist))
+    if(length(up.enhs) > 0) {
+      up.enhs<- resize(up.enhs, fix='center', width=size) 
+      y <- c(up.enhs, y)
+    }
+    dn.enhs <- subsetByOverlaps(REFSEQ.TES.HG19, flank(x,dist,F))
+    if(length(dn.enhs) > 0) {
+      dn.enhs <- resize(dn.enhs, fix='center', width=size) 
+      y <- c(y, dn.enhs)
+    }
   }
+  strand(y) <- '*'
   return(y)
-} 
+} # }}} 
 
 ## this function will feed directly into localRegression()
-summarizeBinned <- function(SE, binning, assay=NULL) {
-  if(is.null(assay)) assay <- names(assays(SE,F))[[1]]
-  if(!is(binning, 'GRangesList')) binning <- split(binning)
-  lapply(binning, function(x) { 
-    sapply(x, function(y) {
-      colMeans(assays(SE[which(rownames(SE) %in% 
-                               names(subsetByOverlaps(rowData(SE), y))), ], 
-                      withDimnames=FALSE)[[assay]], na.rm=TRUE)
-    })
-  })
-}
-
+summarizeBinned <- function(SE, binning, assay=NULL) { #{{{
+  ol <- suppressWarnings(findOverlaps(binning, rowData(SE)))
+  byBin <- split(subjectHits(ol), queryHits(ol))
+  tmp <- do.call(rbind, 
+                 lapply(byBin, 
+                        function(x) colMeans(asy.fast(SE[x,], assay), na.rm=T)))
+  newGR <- binning[ as.integer(rownames(tmp)) ]
+  values(newGR) <- tmp
+  names(values(newGR)) <- colnames(SE)
+  newGR
+} # }}}
