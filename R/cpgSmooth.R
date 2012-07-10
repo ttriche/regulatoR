@@ -1,35 +1,32 @@
-## this has simplified quite a bit
+## this has simplified quite a bit by going block-wise
 cpgWeights <- function(SE, decay=1000, verbose=FALSE) { # {{{
 
   require(Matrix)
   if(!identical(SE, sort(SE))) stop("Please sort() your SummarizedExperiment!")
   if(length(unique(seqnames(rowData(SE))))>1) stop("One chromosome at a time!")
   wts <- Matrix(0, ncol=nrow(SE), nrow=nrow(SE))
-  diag(wts) <- 1
   rownames(wts) <- colnames(wts) <- rownames(SE)
-  ol <- findOverlaps(rowData(SE), resize(rowData(SE),2*decay,fix='center'))
+  diag(wts) <- 1
+  blocks <- IRanges(
+    start = c(1, which(diff(start(rowData(SE))) >= decay) + 1),
+    end = c(which(diff(start(rowData(SE))) >= decay), length(rowData(SE)))
+  )
+  blocks = blocks[ width(blocks) > 1 ] 
 
-  idx <- split(subjectHits(ol), queryHits(ol))
-
-  ## task: figure out which adjacent elements are > decay bp apart.
-  blocked <- as.numeric(which(elementLengths(idx)>1))
-
-  ## there's probably a faster way to do this.
-  for(i in blocked) { ## this should go into C or C++
+  ## FIXME: profile and optimize this (use foreach here instead?!)
+  for(i in seq_len(length(blocks))) { ## this should go into C or C++
     if(verbose) { # {{{ progress meter
-      msg <- paste('Computing weights for feature', i, 'of', length(blocked))
-      message(paste0(msg,' (', round(100*(i/length(blocked))), '%)...'))
+      msg <- paste('Computing weights for block', i)
+      message(paste0(msg, ' (', floor(100*(i/length(blocks))), '% done)...'))
     } # }}}
-    nonzero <- idx[[i]]
-    z <- start(rowData(SE)[idx[[i]]])
+    nonzero <- c(start(blocks[i]):end(blocks[i]))
+    z <- start(rowData(SE)[nonzero])
     subwts <- 1 - log(1 + abs(sapply(z, '-', z)), base=decay)
     wts[ nonzero, nonzero ] <- subwts
   }
 
-  ## add block structure attribute
-  attr(wts, 'blocked') <- blocked
-
-  ## to get the loci: rownames(wts)[as.numeric(attr(wts,'blocked'))]
+  ## retain block boundaries...
+  attr(wts, 'blocks') <- blocks
   return(wts)
 
 } # }}}
@@ -37,16 +34,23 @@ cpgWeights <- function(SE, decay=1000, verbose=FALSE) { # {{{
 ## weight NAs as zeros and normalize; results in sparser, per-sample weights
 adjWts <- function(vec, wts) { # {{{
 
-  require(matrixStats)
   empty <- which(is.na(vec))
-  blocked <- attr(wts, 'blocked')
-  if(length(intersect(empty,blocked))>0) {
-    for(i in intersect(empty, blocked)) {
-      wts[i, ] <- wts[ ,i] <- 0
-      wts[i,i] <- 1
+  blocks <- attr(wts, 'blocks')
+  if(length(empty) > 0) { ## FIXME: farm this out to C/C++
+    holes <- IRanges(start=empty, width=rep(1, length(empty)))
+    toFix <- findOverlaps(blocks, holes)
+    byBlock <- split(toFix, queryHits(toFix))
+    for(i in seq_len(length(byBlock))) {
+      for(j in subjectHits(byBlock[i])) {
+        wts[j, ] <- wts[ ,j] <- 0
+        wts[j,j] <- 1
+      }
+      submat <- seq( start(blocks[queryHits(byBlock[[i]])]), 
+                     end(blocks[queryHits(byBlock[[i]])]) )
+      tmp <- wts[submat, submat] ## local copy 
+      ## renormalize the block after knocking out the NA rows/columns
+      wts[submat, submat] <- matrix(apply(tmp, 2, function(x) return(x/sum(x))))
     }
-    ## renormalize the matrix after knocking out NA rows/columns
-    wts <- Matrix(apply(wts, 2, function(x) return(x / sum(x)))) 
   }
   return(wts)
 
@@ -56,13 +60,15 @@ adjWts <- function(vec, wts) { # {{{
 smoothSites <- function(tmp, wts, keep.NAs=FALSE, plotMe=FALSE) { # {{{
   
   emptyCells <- is.na(tmp)
-  breakpoints <- setdiff(seq_len(nrow(wts)), blocked) ## enables blocking
+  blocks <- attr(wts, 'blocks')
 
   ## if requested, plot 'before' 
   if(plotMe==TRUE) plot(seq_len(nrow(tmp)), tmp[,1], lwd=3, lty=3, col=1)
 
   ## this is where we should do block-diagonal multiplication; farm out to C++?
   message('Block diagonal multiplication would greatly speed up the following:')
+
+  ## FIXME: operate on blocks, as in adjWts 
   for(i in 1:ncol(tmp)) {
 
     ## 'before' plot
