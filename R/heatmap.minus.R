@@ -21,7 +21,7 @@ exp.colors <- colorRampPalette(c("green","black","red"))
 age.colors <- colorRampPalette(c("green","yellow","red"))
 
 # accessibility
-dgf.colors <- colorRampPalette(c("blue","white","red"))
+dgf.colors <- colorRampPalette(c(rep("white",97),"yellow","orange","red")) 
 
 # one indicator, getBar(SE, 'covariate') OR getBar(SE$covariate) will work too
 getBar <- function(SE, name=NULL, col1='#9F9FA3',col2='#000000',col3=NULL){# {{{
@@ -60,7 +60,9 @@ getProbeBar <- function(SE, name=NULL, col1='#9F9FA3',col2='#000000') { # {{{
 getProbeMatrix <- function(SE, names, col1='gray', col2='black') { # {{{
   mat = do.call(cbind, lapply(names, function(x) getProbeBar(SE, x)))
   rownames(mat) <- rownames(SE)
-  colnames(mat) <- names
+  names[ which(duplicated(names)) ] <- ''
+  colnames(mat) <- gsub('CD34.DGF','DGF', names)
+  if(identical(colnames(mat), c('CPGI',''))) colnames(mat) <- NULL
   return(mat)
 } # }}}
 
@@ -93,35 +95,36 @@ by.mad <- function(SE, howmany=1000, assay=NULL) { # {{{
   return(SE[ head(order(values(rowData(SE))$mad, decreasing=TRUE), howmany), ])
 } # }}}
 
+fetchby <- function(SE, how, howmany) { # {{{
+  se <- switch(how, sd=by.sd(SE, howmany), 
+                    mad=by.mad(SE, howmany), 
+                    sdmax=by.sdSdMax(SE, howmany))
+  x <- asy.fast(se)
+  rownames(x) <- rownames(se)
+  colnames(x) <- colnames(se)
+  return(x)
+} # }}}
+
 # how lazy am I?  so lazy.
 coolmap <- function(SE1,
                     SE2=NULL,
                     how='sd',
                     howmany=1000,
                     method='ward',
-                    mut=c('DNMT3A','NPM1','FLT3','MLL.R','NSD1',
-                          'IDH','TET','RUNX1', 'TP53',
-                          'PML.RARA','CEBPA','AML.ETO','CBFB.MYH11',
-                          'Age'),
+                    mut=c('DNMT3A.R882','DNMT3A.other','NPM1','FLT3',
+                          'MLL.R','MLL.PTD','IDH1','IDH2','TP53','TET2','RUNX1',
+                          'PML.RARA','CBFB.MYH11','AML.ETO','other.fusion'),
                     normal=c('PMN','CD3','CD34','CD19'),
                     col=jet.colors(255),
                     logit=FALSE,
                     Rdend=FALSE,
                     Cdend=FALSE,
-                    probeAnno=c('DGF','CPGI'),
+                    probeAnno=c('CPGI','CPGI'),
+                    labRow='',
                     ...) 
 { # {{{
 
   require(impute)
-  fetchby <- function(SE, how, howmany) { # {{{
-    se <- switch(how, sd=by.sd(SE, howmany), 
-                      mad=by.mad(SE, howmany), 
-                      sdmax=by.sdSdMax(SE, howmany))
-    x <- asy.fast(se)
-    rownames(x) <- rownames(se)
-    colnames(x) <- colnames(se)
-    return(x)
-  } # }}}
   x <- x2 <- NULL
   x <- fetchby(SE1, how, howmany)
   if(anyMissing(x)) x <- impute.knn(x)$data
@@ -150,11 +153,12 @@ coolmap <- function(SE1,
   
   if(is.null(SE2)) {
     heatmap.minus(x=x, ColSideColors=z, col=col, hclustfun=hf, scale='none',
-                  Rdend=Rdend, Cdend=Cdend, RowSideColors=RowSideColors, ...)
+                  Rdend=Rdend, Cdend=Cdend, labRow=labRow, 
+                  RowSideColors=RowSideColors, ...)
   } else { 
     heatmap.minus(x=x, x2=x2, ColSideColors=z, ColSideColors2=z2, col=col, 
                  hclustfun=hf, scale='none', Rdend=Rdend, Cdend=Cdend, 
-                 RowSideColors=RowSideColors, ...)
+                 RowSideColors=RowSideColors, labRow=labRow, ...)
   }
 } # }}}
 
