@@ -1,38 +1,52 @@
-setMethod("[", c("SummarizedExperiment", "GenomicRanges", "ANY"), function(x, i, j, ..., drop=TRUE) { # {{{
+setMethod("[", c("SummarizedExperiment", "GenomicRanges", "ANY"), 
+function(x, i, j, ..., drop=TRUE) { # {{{
   if (1L != length(drop) || (!missing(drop) && drop))
     warning("'drop' ignored '[,SummarizedExperiment,GenomicRanges,ANY-method'")
   if (missing(i) && missing(j)) x
   else if (missing(i)) x[ , j]
-  else if (missing(j)) x[ unique(queryHits(findOverlaps(rowData(x), i))), ]
-  else x[ unique(queryHits(findOverlaps(rowData(x), i))), j]
+  else if (missing(j)) x[ unique(queryHits(findOverlaps(rowData(x), i, ...))), ]
+  else x[ unique(queryHits(findOverlaps(rowData(x), i, ...))), j]
 }) # }}}
 
-setMethod("$", "SummarizedExperiment", function(x, name) { # {{{
-  return(colData(x)[[name, exact=FALSE]])
-}) # }}}
+setMethod("$", "SummarizedExperiment", 
+          function(x, name) return(colData(x)[[name, exact=FALSE]]) )
 
-setMethod("$", "SummarizedExperiment", function(x, name) { # {{{
-  return(colData(x)[[name, exact=FALSE]])
-}) # }}}
+setMethod("$<-", "SummarizedExperiment", 
+          function(x, name, value) { # {{{
+            colData(x)[[ name ]] <- value
+            return(x)
+          }) # }}}
 
-setMethod("$<-", "SummarizedExperiment", function(x, name, value) { # {{{
-  colData(x)[[ name ]] <- value
-  return(x)
-}) # }}}
+setMethod("values", signature(x="SummarizedExperiment"),
+          function(x, ...) elementMetadata(rowData(x), ...) )
 
-setMethod("sort", signature(x="SummarizedExperiment"), function(x) { # {{{ 
-  x[ names(sort(rowData(x))), ] 
-}) # }}}
+setMethod("values<-", signature(x="SummarizedExperiment"),
+          function(x, ..., value) { # {{{ 
+            .local <- function (x, value) {
+               elementMetadata(rowData(x)) <- value
+               return(x)
+            }
+            .local(x, ..., value)
+          }) # }}}
 
-setMethod("genome", signature(x="SummarizedExperiment"), function(x) { # {{{ 
-  genome(rowData(x))
-}) # }}}
+setMethod("sort", signature(x="SummarizedExperiment"), 
+          function(x) x[ names(sort(rowData(x))), ] ) 
 
-setMethod("seqinfo", signature(x="SummarizedExperiment"), function(x) { # {{{ 
-  seqinfo(rowData(x))
-}) # }}}
+setMethod("genome", signature(x="SummarizedExperiment"), 
+          function(x) genome(rowData(x)) ) 
 
-setMethod("combine", signature=signature(x="SummarizedExperiment", y="SummarizedExperiment"), function(x, y, ...) { # {{{
+setMethod("seqinfo", signature(x="SummarizedExperiment"),
+          function(x) seqinfo(rowData(x)) )
+
+setMethod("seqnames", signature(x="SummarizedExperiment"),
+          function(x) seqnames(rowData(x)) )
+
+setMethod("seqlevels", signature(x="SummarizedExperiment"),
+          function(x) seqlevels(rowData(x)) )
+
+setMethod("combine", signature=signature(x="SummarizedExperiment", 
+                                         y="SummarizedExperiment"), 
+          function(x, y, ...) { # {{{
               if (class(x) != class(y)) {
                 stop(paste("Error: objects must be the same class, but are ",
                            class(x), ", ", class(y), sep=""))

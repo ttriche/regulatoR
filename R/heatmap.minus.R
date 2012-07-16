@@ -7,6 +7,44 @@
 # Edits: tim, tim.triche@usc.edu
 ###############################################################################
 
+# standardized mutation matrix colors
+std.cols <- c('#DEDEDE', '#000000', '#880000')
+
+# standardized fonts 
+# normal bone marrow covariates
+normal.std <- c('PMN',
+                'CD34',
+                'CD19',
+                'CD3')
+
+# LAML mutations/fusions of note
+# formatting is ala Tim Ley
+muts.font <- c('fusion' = 1,
+               'gene' = 3)
+muts.type <- c('DNMT3A' = 'gene',
+               'NPM1' = 'gene',
+               'FLT3' = 'gene',
+               'PTPN11' = 'gene',
+               'NRAS.KRAS' = 'gene',
+               'MLL' = 'fusion',
+               'PML.RARA' = 'fusion',
+               'NUP98.NSD1' = 'fusion',
+               'TET1.TET2' = 'gene',
+               'TP53' = 'gene',
+               'IDH1.IDH2' = 'gene',
+               'RUNX1' = 'gene',
+               'Cohesins' = 'gene', ## STAG2, RAD21, SMC3, SMC1A 
+               'Spliceosome' = 'gene', ## SF3B, PRPF8, U2AF1, U2AF2, SRSF6, WT1
+               'AML.ETO' = 'fusion',
+               'CEBPA' = 'gene',
+               'KIT' = 'gene',
+               'CBFB.MYH11' = 'fusion',
+               'FAM70B' = 'fusion',
+               'Polycomb' = 'gene', ## EZH2, EED, SUZ12, ASXL1
+               'NF1' = 'gene',
+               'PHF6' = 'gene')
+muts.std <- names(muts.type)
+
 # traditional
 jet.colors <- colorRampPalette(c("#00007F","blue","#007FFF","cyan","#7FFF7F", 
                                  "yellow", "#FF7F00", "red", "#7F0000"))
@@ -21,25 +59,30 @@ exp.colors <- colorRampPalette(c("green","black","red"))
 age.colors <- colorRampPalette(c("green","yellow","red"))
 
 # accessibility
-dgf.colors <- colorRampPalette(c(rep("white",97),"yellow","orange","red")) 
+dgf.colors <- colorRampPalette(
+                c(rep("white",6),"yellow","orange","red","darkred")) 
 
 # one indicator, getBar(SE, 'covariate') OR getBar(SE$covariate) will work too
-getBar <- function(SE, name=NULL, col1='#9F9FA3',col2='#000000',col3=NULL){# {{{
+getBar <- function(SE, name=NULL, cols=std.cols) { # {{{
   if(is(SE, 'SummarizedExperiment')) x <- colData(SE)[[name]]
   else x <- SE ## usually will be SE$somthing instead
   if(toupper(name)=='GENDER') {
     ifelse(colData(SE)[[name]]=='M','lightblue','pink')
   } else if(toupper(name)=='AGE') {
     age.colors(100)[colData(SE)[[name]]]
+  } else if(toupper(name)=='MISC.FUSIONS') {
+    ifelse(colData(SE)[[name]], cols[3], cols[1])
   } else if(is.logical(x)) {
-    ifelse(colData(SE)[[name]], col2, col1)
+    ifelse(colData(SE)[[name]], cols[2], cols[1])
+  } else if(is.factor(x)) {
+    cols[as.numeric(colData(SE)[[name]])]
   } else {
-    ifelse(x %in% c('',' '), col1, col2)
+    ifelse(x %in% c('',' ','false','FALSE'), col1, col2)
   }
 } # }}}
 
-getMatrix <- function(SE, names, col1='gray', col2='black', col3=NULL) { # {{{
-  mat = do.call(rbind, lapply(names, function(x) getBar(SE, x, col1,col2,col3)))
+getMatrix <- function(SE, names, cols=std.cols) { # {{{
+  mat = do.call(rbind, lapply(names, function(x) getBar(SE, x, cols)))
   colnames(mat) <- colnames(SE)
   rownames(mat) <- names
   return(mat)
@@ -48,21 +91,21 @@ getMatrix <- function(SE, names, col1='gray', col2='black', col3=NULL) { # {{{
 getProbeBar <- function(SE, name=NULL, col1='#9F9FA3',col2='#000000') { # {{{
   if(is(SE, 'SummarizedExperiment')) x <- values(rowData(SE))[[name]]
   else x <- SE ## usually will be values(rowData(SE))$something instead
-  if(toupper(name)=='CPGI') {
+  if(substr(toupper(name), 1, 3)=='CPG') {
     ifelse(x=='island','darkgreen',ifelse(x=='shore','green','white'))
   } else if(toupper(name) %in% c('OECG','DGF','CD34.DGF','LOG.DGF')) {
-    rev(dgf.colors(100))[x]
+    ley.colors(100)[x]
   } else {
     ifelse(values(rowData(SE))[[name]], col2, col1)
   }
 } # }}}
 
-getProbeMatrix <- function(SE, names, col1='gray', col2='black') { # {{{
-  mat = do.call(cbind, lapply(names, function(x) getProbeBar(SE, x)))
+getProbeMatrix <- function(SE, covs) { # {{{
+  mat <- matrix( rep('#FFFFFF', nrow(SE)), ncol=1 )
+  mat = cbind(mat,
+              do.call(cbind, lapply(covs, function(x) getProbeBar(SE, x))))
+  colnames(mat) <- c('', gsub('CD34.DGF','DGF', covs))
   rownames(mat) <- rownames(SE)
-  names[ which(duplicated(names)) ] <- ''
-  colnames(mat) <- gsub('CD34.DGF','DGF', names)
-  if(identical(colnames(mat), c('CPGI',''))) colnames(mat) <- NULL
   return(mat)
 } # }}}
 
@@ -96,6 +139,7 @@ by.mad <- function(SE, howmany=1000, assay=NULL) { # {{{
 } # }}}
 
 fetchby <- function(SE, how, howmany) { # {{{
+  se <- split(SE, substr(rownames(SE), 1, 2))$cg
   se <- switch(how, sd=by.sd(SE, howmany), 
                     mad=by.mad(SE, howmany), 
                     sdmax=by.sdSdMax(SE, howmany))
@@ -105,25 +149,27 @@ fetchby <- function(SE, how, howmany) { # {{{
   return(x)
 } # }}}
 
-# how lazy am I?  so lazy.
+# how lazy am I? VERY.
 coolmap <- function(SE1,
                     SE2=NULL,
                     how='sd',
                     howmany=1000,
                     method='ward',
-                    mut=c('DNMT3A.R882','DNMT3A.other','NPM1','FLT3',
-                          'MLL.R','MLL.PTD','IDH1','IDH2','TP53','TET2','RUNX1',
-                          'PML.RARA','CBFB.MYH11','AML.ETO','other.fusion'),
-                    normal=c('PMN','CD3','CD34','CD19'),
+                    mut=muts.std, 
+                    normal=normal.std,
                     col=jet.colors(255),
                     logit=FALSE,
                     Rdend=FALSE,
                     Cdend=FALSE,
-                    probeAnno=c('CPGI','CPGI'),
+                    probeAnno=c('CPGI'),
                     labRow='',
                     ...) 
 { # {{{
 
+
+  if(any(seqnames(SE1) %in% c('chrX','chrY'))) {
+    SE1 <- SE1[ -which(seqnames(SE1) %in% c('chrX','chrY')), ]
+  }
   require(impute)
   x <- x2 <- NULL
   x <- fetchby(SE1, how, howmany)
@@ -154,11 +200,11 @@ coolmap <- function(SE1,
   if(is.null(SE2)) {
     heatmap.minus(x=x, ColSideColors=z, col=col, hclustfun=hf, scale='none',
                   Rdend=Rdend, Cdend=Cdend, labRow=labRow, 
-                  RowSideColors=RowSideColors, ...)
+                  RowSideColors=RowSideColors, x2names=FALSE, ...)
   } else { 
     heatmap.minus(x=x, x2=x2, ColSideColors=z, ColSideColors2=z2, col=col, 
                  hclustfun=hf, scale='none', Rdend=Rdend, Cdend=Cdend, 
-                 RowSideColors=RowSideColors, labRow=labRow, ...)
+                 RowSideColors=RowSideColors, x2names=FALSE, labRow=labRow, ...)
   }
 } # }}}
 
@@ -208,6 +254,7 @@ heatmap.minus<-function(x,
                         Cdend=TRUE,
 		                    verbose = getOption("verbose"),
                         output=FALSE, 
+                        x2names=FALSE,
                         ...) {
 
 	scale <- ifelse(symm && missing(scale), "none", match.arg(scale))
@@ -445,7 +492,7 @@ heatmap.minus<-function(x,
 		nc2<-dim(x2)[2]
 		image(1:nc2, 1:nr, t(x2.ordered), xlim =0.5+c(0, nc2), ylim = 0.5+c(0, nr), axes = FALSE,xlab = "", ylab = "",col=col,...)
 	  axis(1, 1:nc2, labels = FALSE, las = 2, line = -0.5, tick = 0) #, cex.axis = cexCol)
-	  text(c(1:nc2), 1, labels = colnames(x2)[newcol], srt = colLabSrt, adj=c(1.5,1.5), xpd=TRUE, offset=2, font=2,cex=cexCol)
+	  if(x2names != FALSE) text(c(1:nc2), 1, labels = colnames(x2)[newcol], srt = colLabSrt, adj=c(1.5,1.5), xpd=TRUE, offset=2, font=2,cex=cexCol)
 		if (!is.null(mtext2)){
 	  	mtext(mtext2,1, adj=0.5, line=mline2,font=2,cex=mtextCex)
 	  }
