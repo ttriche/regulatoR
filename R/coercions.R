@@ -59,13 +59,13 @@ eSetToSE <- function(from) { # {{{
   } else {
     chip <- annotation(from)
     require(paste(chip, "db", sep = "."), character.only=TRUE)
-    starts <- unlist(lapply(mget(featureNames(from), 
+    starts <- unlist(lapply(mget(featureNames(from), ifnotfound=NA,
                                  envir=get(paste0(chip, 'CHRLOC'))), 
                             function(x) x[[1]]))
-    ends   <- unlist(lapply(mget(featureNames(from), 
+    ends   <- unlist(lapply(mget(featureNames(from), ifnotfound=NA,
                                  envir=get(paste0(chip, 'CHRLOCEND'))), 
                             function(x) x[[1]]))
-    chrs   <- unlist(lapply(mget(featureNames(from), 
+    chrs   <- unlist(lapply(mget(featureNames(from), ifnotfound=NA,
                                  envir=get(paste0(chip, 'CHR'))), 
                             function(x) x[[1]]))
     strand <- ifelse(sign(starts) == '-1', '-', '+')
