@@ -15,7 +15,15 @@ std.cols <- c(
               '#777777', # dark gray
               '#008800', # green
               '#888800', # yellow
-              '#008888'  # teal
+              '#008888', # teal
+              '#880088', # purple
+              '#448844', # gray green
+              '#004488', # tealish
+              '#886644', # tealish
+              '#FFFF00', # tealish
+              '#0088FF', # tealish
+              '#664422', # tealish
+              '#FF00FF' # tealish
               )
 alt.cols <- c(
               '#E0E0E0', # gray
@@ -41,7 +49,25 @@ ctls.std <- names(ctls.type)
 
 # LAML mutations/fusions of note
 # formatting is ala Tim Ley
-muts.type <- c(
+muts.type <- c(               
+
+               'kEquals2' = 'cluster',
+               'kEquals3' = 'cluster',
+               'kEquals4' = 'cluster',
+               'kEquals5' = 'cluster',
+               'kEquals6' = 'cluster',
+               'kEquals7' = 'cluster',
+               'kEquals8' = 'cluster',
+               'kEquals9' = 'cluster',
+               'kEquals10' = 'cluster',
+               'kEquals11' = 'cluster',
+               'kEquals12' = 'cluster',
+               'kEquals13' = 'cluster',
+               'kEquals14' = 'cluster',
+               'kEquals15' = 'cluster',
+
+               'SPACER' = 'spacer',
+
                'DNMT3A' = 'gene',
                'NPM1' = 'gene',
                'FLT3' = 'gene',
@@ -67,14 +93,14 @@ muts.type <- c(
                'MLL_non.ELL' = 'fusion', ## actually fusion OR mutation
                'CREBBP.KAT6A' = 'fusion', ## just one
                'PML.RARA' = 'fusion',
-               'NUP98.NSD1' = 'fusion', ## three
                'MLL.ELL' = 'fusion', ## three 
-               'RPN1.MECOM' = 'fusion', ## just one
+               'NUP98.NSD1' = 'fusion', ## three
                'AF10.PICALM' = 'fusion', ## two
+               'RPN1.MECOM' = 'fusion', ## just one
+               'other_fusions' = 'fusion',
                'MTOR.CHD1' = 'fusion', ## just one
-               'CBFB.MYH11' = 'fusion',
                'RUNX1_fusion' = 'fusion',
-               'other_fusions' = 'fusion'
+               'CBFB.MYH11' = 'fusion'
 
                )
 muts.std <- names(muts.type)
@@ -128,6 +154,7 @@ getMatrix <- function(SE, muts, cols=std.cols, alt=alt.cols) { # {{{
   for(i in seq_along(muts)) {
     coloring = cols
     x = names(muts)[i]
+    message(x)
     if(muts[i] == 'fusion') {
       coloring = alt
       mat[ x, ] = getBar(SE, x, coloring)
@@ -246,24 +273,19 @@ coolmap <- function(SE1,
                     Cdend=FALSE,
                     probeAnno=c(
                                 'CD34.1','CD34.2','CD34.3',
+                                'SPACER1',
                                 'H3K36me3', # exons
                                 'H3K27me3','H3K4me3', # bivalence
                                 'H3K4me1','H3K27ac', # enhancers
-                                'SPACER1',
-                                'CMK',
-                                'NB4',
-                                'HL60',
-                                'K562',
                                 'SPACER2',
-                                'K562.DHS',
-                                'CD14.DHS',
-                                'CD34.DHS',
-                                'SPACER3',
                                 'CPGI'
                                 ),
                     output=TRUE,
                     labRow='',
                     CpH=FALSE,
+                    k=1:15,
+                    rowRatio=1,
+                    colRatio=0.25,
                     ...) 
 { # {{{
 
@@ -272,7 +294,7 @@ coolmap <- function(SE1,
     exclude <- union(exclude, which(seqnames(SE1) %in% c('chrX','chrY')))
   } # }}}
   if(any(rowSums(is.na(asy.fast(SE1)))/ncol(SE1) >= 0.5)) {
-    exclude <- union(exclude,which(rowSums(is.na(asy.fast(SE1)))/ncol(SE1)>=.5))
+    exclude = union(exclude,which(rowSums(is.na(asy.fast(SE1)))/ncol(SE1)>=.5))
   } # }}}
 
   ## this needs revamping due to the repeat situation
@@ -315,16 +337,19 @@ coolmap <- function(SE1,
     out <- heatmap.minus(x=x, ColSideColors=z, col=col, hclustfun=hf, 
                          scale='none', Rdend=Rdend, Cdend=Cdend, labRow=labRow, 
                          labCol=labCol, RowSideColors=RowSideColors, 
-                         x2names=FALSE, output=TRUE, ...)
+                         x2names=FALSE, output=TRUE, rowRatio=rowRatio,
+                         colRatio=colRatio, k=k, ...)
   } else { 
     out <- heatmap.minus(x=x, x2=x2, ColSideColors=z, ColSideColors2=z2, 
                          col=col, hclustfun=hf, scale='none', Rdend=Rdend, 
                          Cdend=Cdend, RowSideColors=RowSideColors, 
-                         x2names=FALSE, labRow=labRow, output=TRUE, ...)
+                         x2names=FALSE, labRow=labRow, output=TRUE, 
+                         rowRatio=rowRatio, colRatio=colRatio, k=k, ...)
   }
   
   out$colData <- colData(SE1)[out$colNames,]
   out$rowData <- rowData(SE1)[out$rowNames]
+  if(Cdend==TRUE) rownames(out$clusters) <- colnames(SE1)
   return(out)
 
 } # }}}
@@ -376,6 +401,7 @@ heatmap.minus<-function(x,
 		                    verbose = getOption("verbose"),
                         output=FALSE, 
                         x2names=FALSE,
+                        k=15,
                         ...) 
 { # {{{
 
@@ -406,7 +432,7 @@ heatmap.minus<-function(x,
 			ddc.i <- as.dendrogram(hcc.i)
 			colInd<-c(colInd,ID[order.dendrogram(ddc.i)])
 		}
-		} else{
+	} else {
 		if (doCdend) {
 			if (inherits(Colv, "dendrogram")) 
 				ddc <- Colv
@@ -414,12 +440,19 @@ heatmap.minus<-function(x,
 				if (nr != nc) 
 					stop("Colv = \"Rowv\" but nrow(x) != ncol(x)")
 				ddc <- ddr
-			}else {
-				hcc <- hclustfun(distfun(if (symm) 
-											x
-										else t(x)))
-				ddc <- as.dendrogram(hcc)
-				if (!is.logical(Colv) || Colv) 
+			} else {
+
+        ## automatic cluster calls here
+        hcc <- hclustfun(distfun(if(symm) x	else t(x)))
+        sizes <- seq(2, k, 1)
+        names(sizes) <- paste0('kEquals', sizes)
+        clusters <- do.call(cbind, lapply(sizes, function(i) cutree(hcc, k=i)))
+        clusters <- DataFrame(clusters)
+        for(kk in names(clusters)) clusters[, kk] <- as.factor(clusters[, kk])
+        ## done with automatic cluster calls 
+
+        ddc <- as.dendrogram(hcc)
+				if(!is.logical(Colv) || Colv) 
 					ddc <- reorderfun(ddc, Colv)
 			}
 			if (nc != length(colInd <- order.dendrogram(ddc))) 
@@ -641,8 +674,11 @@ heatmap.minus<-function(x,
     out<-list()
     out$colInd <- colInd
     out$colNames <- rownames(x)
+    out$ddc <- ddc
     out$rowInd <- rowInd
     out$rowNames <- colnames(x)
+    out$ddr <- ddr
+    out$clusters <- clusters
 	  if (!missing(ColSideColors2) && !is.null(ColSideColors2)) {
       out$colInd2<-newcol
       out$rowInd2<-newrow
@@ -650,8 +686,6 @@ heatmap.minus<-function(x,
     return(out)
 	}
 } # }}}
-
-
 
 ############################################################################
 # HISTORY:
