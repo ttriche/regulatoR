@@ -15,7 +15,7 @@ cpgWeights <- function(SE, decay=1000, verbose=FALSE) { # {{{
 
   ## FIXME: profile and optimize this (use foreach here instead?!)
   for(i in seq_len(length(blocks))) { ## this should go into C or C++
-    if(verbose) { # {{{ progress meter
+    if(verbose) { # {{{ ghetto progress meter
       msg <- paste('Computing weights for block', i)
       message(paste0(msg, ' (', floor(100*(i/length(blocks))), '% done)...'))
     } # }}}

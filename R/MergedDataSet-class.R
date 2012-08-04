@@ -3,13 +3,13 @@ setClassUnion("SummarizedExperimentOrNULL",c("SummarizedExperiment","NULL"))
 ## slots: exprData, methData, geneData, exonData, lincData, mirData, cnvData
 setClass("MergedDataSet", contains=c("eSet"), # {{{
          representation=representation(
-           exprData="SummarizedExperimentOrNULL",   # exprs, pvals
-           methData="SummarizedExperimentOrNULL",   # betas, pvals
-           geneData="SummarizedExperimentOrNULL",   # counts, RPKM, pvals
+           exprData="SummarizedExperimentOrNULL",   # exprs, pvals?
+           methData="SummarizedExperimentOrNULL",   # betas, totals
+           geneData="SummarizedExperimentOrNULL",   # counts, RPKM, pvals?
            exonData="SummarizedExperimentOrNULL",   # counts, RPKM
            lincData="SummarizedExperimentOrNULL",   # counts, RPKM
-           mirData="SummarizedExperimentOrNULL",    # counts, RPM
-           cnvData="SummarizedExperimentOrNULL"     # RLE CN, pvals
+           mirData="SummarizedExperimentOrNULL",    # counts, RPKM
+           cnvData="SummarizedExperimentOrNULL"     # RLE CN, pvals?
         )) # }}}
 
 setValidity("MergedDataSet", function(object) { # {{{ check sample names 

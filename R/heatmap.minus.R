@@ -50,57 +50,46 @@ ctls.std <- names(ctls.type)
 # LAML mutations/fusions of note
 # formatting is ala Tim Ley
 muts.type <- c(               
+               #'kEquals10' = 'cluster',
+               #'kEquals11' = 'cluster',
+               #'kEquals12' = 'cluster',
+               #'kEquals13' = 'cluster',
+               #'kEquals14' = 'cluster',
+               #'kEquals15' = 'cluster',
 
-               'kEquals2' = 'cluster',
-               'kEquals3' = 'cluster',
-               'kEquals4' = 'cluster',
-               'kEquals5' = 'cluster',
-               'kEquals6' = 'cluster',
-               'kEquals7' = 'cluster',
-               'kEquals8' = 'cluster',
-               'kEquals9' = 'cluster',
-               'kEquals10' = 'cluster',
-               'kEquals11' = 'cluster',
-               'kEquals12' = 'cluster',
-               'kEquals13' = 'cluster',
-               'kEquals14' = 'cluster',
-               'kEquals15' = 'cluster',
+               #'SPACER' = 'spacer',
 
-               'SPACER' = 'spacer',
-
-               'DNMT3A' = 'gene',
+               'DNMT3A.R882' = 'gene',
                'NPM1' = 'gene',
                'FLT3' = 'gene',
-               'MLL_PTD' = 'gene',
-               'NRAS.KRAS' = 'gene',
-               'PTPN11.NF1' = 'gene',  ## NF1 is both fused and mutated 
-               'ABL.CBL.KIT' = 'gene',
+               #'NRAS.KRAS' = 'gene',
+               #'Phosphatase' = 'gene', ## PTPN11, PTPRT, PTPRN, PTPRD
+                                       ### PTPRJ, PTPRG, PTPRE, PTPRN2
+               #'ABL.CBL.KIT' = 'gene',
                'TET1.TET2' = 'gene',
-               'IDH1.IDH2' = 'gene',
-               'Spliceosome.WT1' = 'gene', ## SF3B,PRPF8,U2AF1,U2AF2,SRSF6,WT1
-               'TP53_deletion' = 'gene',
-               'TP53_mutation' = 'gene',
+               'IDH1.IDH2' = 'gene', 
                'Polycomb' = 'gene', ## EZH2, EED, SUZ12, ASXL1, CBX7
-               'Cohesin' = 'gene', ## STAG2, RAD21, SMC3, SMC1A
-               'CEBPA' = 'gene', 
+               #'ETV6.IKZF1.IKZF4' = 'gene',
+               'TP53' = 'gene',
+               #'Spliceosome' = 'gene', ## SF3B1, PRPF8, PRPF4B, U2AF1, U2AF2,
+                                       ### SRSF6, TRA2B, CSTF2T, DDX1, DDX23, 
+                                       ### DHX32, METTL3, PLRG1, PRPF3, RBMX,
+                                       ### SNRNP200, SRRM1, SRRM2, SUPT5H,
+                                       ### U2AF1L4
+               #'Cohesin' = 'gene', ## STAG2, RAD21, SMC3, SMC1A
                'RUNX1' = 'gene', 
+               'CEBPA' = 'gene', 
                'CBFB' = 'gene', 
-               'MIR142' = 'gene',
-               'PHF6' = 'gene',
 
                'SPACER' = 'spacer',
                 
-               'MLL_non.ELL' = 'fusion', ## actually fusion OR mutation
-               'CREBBP.KAT6A' = 'fusion', ## just one
+               'CBFB.MYH11' = 'fusion',
+               'RUNX1.RUNX1T1' = 'fusion',
                'PML.RARA' = 'fusion',
-               'MLL.ELL' = 'fusion', ## three 
-               'NUP98.NSD1' = 'fusion', ## three
                'AF10.PICALM' = 'fusion', ## two
-               'RPN1.MECOM' = 'fusion', ## just one
-               'other_fusions' = 'fusion',
-               'MTOR.CHD1' = 'fusion', ## just one
-               'RUNX1_fusion' = 'fusion',
-               'CBFB.MYH11' = 'fusion'
+               'NUP98.NSD1' = 'fusion', ## three
+               'MLL.ELL' = 'fusion', ## three 
+               'MLL_non.ELL' = 'fusion' ## several
 
                )
 muts.std <- names(muts.type)
@@ -273,7 +262,12 @@ coolmap <- function(SE1,
                     Cdend=FALSE,
                     probeAnno=c(
                                 'CD34.1','CD34.2','CD34.3',
+                                'CD34.DHS','CD14.DHS',
                                 'SPACER1',
+                                'CMK','CMK.DHS',
+                                'SPACER3',
+                                'K562','K562.DHS',
+                                'SPACER3',
                                 'H3K36me3', # exons
                                 'H3K27me3','H3K4me3', # bivalence
                                 'H3K4me1','H3K27ac', # enhancers
@@ -283,8 +277,8 @@ coolmap <- function(SE1,
                     output=TRUE,
                     labRow='',
                     CpH=FALSE,
-                    k=1:15,
-                    rowRatio=1,
+                    k=15,
+                    rowRatio=0.75,
                     colRatio=0.25,
                     ...) 
 { # {{{
@@ -333,7 +327,7 @@ coolmap <- function(SE1,
   if(logit && !is.null(x2)) x2 <- logit(x2)
   
   if(is.null(SE2)) {
-    labCol = gsub('TCGA(_|-AB-)','',colnames(SE1))
+    labCol = '' #  gsub('TCGA(_|-AB-)','',colnames(SE1))
     out <- heatmap.minus(x=x, ColSideColors=z, col=col, hclustfun=hf, 
                          scale='none', Rdend=Rdend, Cdend=Cdend, labRow=labRow, 
                          labCol=labCol, RowSideColors=RowSideColors, 
@@ -385,7 +379,7 @@ heatmap.minus<-function(x,
                         colLabSrt=90,
                         cexRow = 0.2 + 1/log10(nr), 
                         cexCol = 0.2 + 1/log10(nc), 
-                        labCex=1.2,
+                        labCex=1.5,
                         mtextCex=1.3,
                         ratio=1,
                         rowRatio=0.1,
