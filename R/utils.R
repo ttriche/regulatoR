@@ -19,6 +19,19 @@ byChr <- function(x) { # {{{
   }
 } # }}}
 
+## mostly for df2GR() and SNP finding
+fromChr <- function(seqs, prefix='chr') { # {{{
+  for(i in rev(seq_len(nchar(prefix)))) {
+    seqs <- gsub(paste0('^', substr(prefix, 1, i)), '', seqs)
+  }
+  return(seqs)
+} # }}}
+
+## mostly for df2GR() and SNP finding
+toChr <- function(seqs, prefix='chr') { # {{{
+  paste0(prefix, fromChr(seqs, prefix))
+} # }}}
+
 ## mostly for dropUnclusterables
 byNAs <- function(SE, max=0.5, assay=NULL) { # {{{
   rowNAs <- rowSums(is.na(asy.fast(SE, assay)), na.rm=T)/ncol(SE)

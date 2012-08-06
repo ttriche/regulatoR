@@ -1,17 +1,52 @@
-## so that I can send this around:
-df2GR <- function(df, keepColumns=FALSE, ignoreStrand=FALSE) { ## {{{
-  stopifnot(class(df) == "data.frame")
-  subs <- list(chromStart='start', chromEnd='end', chrom='chr', seqnames='chr')
-  for(s in names(subs)) names(df) = gsub(s, subs[[s]], names(df), ignore=TRUE)  
-  stopifnot(all(c("start", "end") %in% names(df)))
-  if('genome' %in% names(attributes(df))) g <- attr(df, 'genome') else g <- NULL
-  if(substr(df$chr, 1, 3)[1] != 'chr') df$chr <- paste('chr', df$chr, sep='')
-  df <- subset(df, !is.na(start) & !is.na(end))
-  if(!ignoreStrand && ("strand" %in% names(df))) {
-    if(is.numeric(df$strand)) df$strand <- strandMe(df$strand)
-    GR <- with(df, GRanges(chr, IRanges(start=start, end=end), strand=strand))
+require(GenomicRanges) ## for DataFrame, GenomicRanges, and so forth 
+
+df2GR <- function(df, keepColumns=F, ignoreStrand=F, prefix='chr') { ## {{{
+
+  if(class(df) == 'DataFrame') df <- as(df, 'data.frame')
+  if(class(df) != 'data.frame') stop('df must be a data.frame or DataFrame')
+
+  ## tidy up column names to coerce
+  subs <- list(start='chromStart', 
+               seqnames='chrom',
+               end='chromEnd', 
+               chr='chrom')
+  for(s in names(subs)) {
+    names(df) = gsub(s, subs[[s]], names(df), ignore=TRUE)
+  }
+  if(!all(unique(subs) %in% names(df))) {
+    stop('df must have columns chrom, chromStart, chromEnd to proceed')
+  }
+
+  ## assign genome pre-emptively if possible
+  if('genome' %in% names(attributes(df))) {
+    g <- attr(df, 'genome') 
   } else {
-    GR <- with(df, GRanges(chr, IRanges(start=start, end=end)))
+    g <- NULL
+  }
+
+  ## fix seqnames if necessary 
+  if(!all(grepl(prefix, df$chrom))) {
+    df$chrom <- toChr(df$chrom, prefix=prefix)
+  }
+
+  ## fuss about any missing data, which will be dropped presently 
+  if( any(is.na(df$chromStart)) ) warning('Dropping ranges w/chromStart == NA')
+  if( any(is.na(df$chromEnd)) ) warning('Dropping ranges w/chromEnd == NA')
+  if( any(is.na(df$chrom)) ) warning('Dropping ranges w/chrom == NA')
+  df <- subset(df, !is.na(chromStart) & !is.na(chromEnd) & !is.na(chrom))
+
+  if(ignoreStrand == FALSE && ("strand" %in% names(df))) {
+    if(is.numeric(df$strand)) {
+      df$strand <- strandMe(df$strand)
+    }
+    GR <- with(df, GRanges(chrom, 
+                           IRanges(start=chromStart, 
+                                   end=chromEnd), 
+                           strand=strand))
+  } else {
+    GR <- with(df, GRanges(chrom, 
+                           IRanges(start=chromStart, 
+                                   end=chromEnd)))
   }
   if('name' %in% names(df)) {
     names(GR) <- df$name
@@ -20,10 +55,12 @@ df2GR <- function(df, keepColumns=FALSE, ignoreStrand=FALSE) { ## {{{
     names(GR) <- rownames(df)
   }
   if(keepColumns) {
-    skipped = c("rangename","chr","start","end","width","strand")
+    skipped = c("rangename","chrom","chromStart","chromEnd","width","strand")
     elementMetadata(GR) <- as(df[, setdiff(names(df), skipped), drop=F], 
                               "DataFrame")
   }
+
+  ## chintzy hack from the original methLab
   if('X' %in% names(elementMetadata(GR))) {
     if(all(is.na(GR$X))) {
       GR$X <- NULL
@@ -31,11 +68,15 @@ df2GR <- function(df, keepColumns=FALSE, ignoreStrand=FALSE) { ## {{{
       names(elementMetadata(GR))[which(names(elementMetadata(GR))=='X')]='score'
     }
   }
+
+  ## assign genome to GR if known 
   if(!is.null(g)) genome(GR) <- g
+
   return(GR)
 } # }}}
+setAs("data.frame", "GenomicRanges", function(from) df2GR(from)) 
+setAs("DataFrame", "GenomicRanges", function(from) df2GR(from)) 
 
-require(GenomicRanges)
 setAs("MIAME", "SimpleList",
   function(from) { # {{{
     to = list()
@@ -44,7 +85,7 @@ setAs("MIAME", "SimpleList",
   }
 ) # }}}
 
-## this will eventually require a better approach
+## this will eventually require a better approach; add Illumina expr support 
 eSetToSE <- function(from) { # {{{
   if(grepl('^GPL', annotation(from))) {
     message('This coercion expects to find at least an Entrez ID via fData()')
@@ -84,11 +125,10 @@ eSetToSE <- function(from) { # {{{
                        colData=as(pData(from), 'DataFrame'),
                        exptData=as(experimentData(from), 'SimpleList'))
 } # }}}
-
 setAs("ExpressionSet", "SummarizedExperiment", function(from) eSetToSE(from)) 
 
 ## for MethyLumiSets (sorta awkward as GEO 450k data has different assay names)
-if(require(methylumi)) { ## this is going into MethyLumi anyhow
+if(require(methylumi)) { ## this is going into MethyLumi anyhow, eventually...
   msetToSE <- function(from) { # {{{
     require(FDb.InfiniumMethylation.hg19) 
     chip=gsub('^IlluminaHumanMethylation','HM',gsub('k$','',annotation(from)))
