@@ -1,48 +1,31 @@
-setMethod("[", c("SummarizedExperiment", "GenomicRanges", "ANY"), 
-function(x, i, j, ..., drop=TRUE) { # {{{
-  if (1L != length(drop) || (!missing(drop) && drop))
-    warning("'drop' ignored '[,SummarizedExperiment,GenomicRanges,ANY-method'")
-  if (missing(i) && missing(j)) x
-  else if (missing(i)) x[ , j]
-  else if (missing(j)) x[ unique(queryHits(findOverlaps(rowData(x), i, ...))), ]
-  else x[ unique(queryHits(findOverlaps(rowData(x), i, ...))), j]
-}) # }}}
+setMethod("findOverlaps", 
+          c("SummarizedExperiment", "GenomicRanges"),
+          function(query, subject, ...) { # {{{
+            findOverlaps(rowData(query), subject, ...)
+          } # }}}
+)
 
-setMethod("$", "SummarizedExperiment", 
-          function(x, name) return(colData(x)[[name, exact=FALSE]]) )
+setMethod("subsetByOverlaps", 
+          c("SummarizedExperiment", "GenomicRanges"),
+          function(query, subject, ...) { # {{{
+            query[ unique(queryHits(findOverlaps(query, subject, ...))), ]
+          } # }}}
+) 
 
-setMethod("$<-", "SummarizedExperiment", 
-          function(x, name, value) { # {{{
-            colData(x)[[ name ]] <- value
-            return(x)
-          }) # }}}
-
-setMethod("values", signature(x="SummarizedExperiment"),
-          function(x, ...) elementMetadata(rowData(x), ...) )
-
-setMethod("values<-", signature(x="SummarizedExperiment"),
-          function(x, ..., value) { # {{{ 
-            .local <- function (x, value) {
-               elementMetadata(rowData(x)) <- value
-               return(x)
-            }
-            .local(x, ..., value)
-          }) # }}}
+setMethod("[", 
+          c("SummarizedExperiment", "GenomicRanges", "ANY"), 
+          function(x, i, j, ..., drop=TRUE) { # {{{
+            if (1L != length(drop) || (!missing(drop) && drop))
+              warning("'drop' ignored '[,SummarizedExperiment,GenomicRanges,ANY-method'")
+            if (missing(i) && missing(j)) x
+            else if (missing(i)) x[ , j]
+            else if (missing(j)) subsetByOverlaps(x, i, ...)
+            else subsetByOverlaps(x, i, ...)[ , j]
+          } # }}}
+)
 
 setMethod("sort", signature(x="SummarizedExperiment"), 
           function(x) x[ names(sort(rowData(x))), ] ) 
-
-setMethod("genome", signature(x="SummarizedExperiment"), 
-          function(x) genome(rowData(x)) ) 
-
-setMethod("seqinfo", signature(x="SummarizedExperiment"),
-          function(x) seqinfo(rowData(x)) )
-
-setMethod("seqnames", signature(x="SummarizedExperiment"),
-          function(x) seqnames(rowData(x)) )
-
-setMethod("seqlevels", signature(x="SummarizedExperiment"),
-          function(x) seqlevels(rowData(x)) )
 
 setMethod("combine", signature=signature(x="SummarizedExperiment", 
                                          y="SummarizedExperiment"), 
@@ -62,7 +45,6 @@ setMethod("combine", signature=signature(x="SummarizedExperiment",
                   length(intersect(rownames(x), rownames(y))) < nrow(y) ) {
                 stop("Error: x and y have differing features, cannot combine")
               }
-              browser()
               commonAsys <- intersect(names(x@assays), names(y@assays))
               names(commonAsys) <- commonAsys
               if(length(commonAsys) < 1) stop('Error: no assays in common')

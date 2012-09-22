@@ -15,12 +15,16 @@ mergeAligned <- function(x, y, ...) { # {{{
 } # }}}
 
 ## molds raw counts into a SummarizedExperiment and adds RPKM as an alternative
-alignedToSE <- function(aligned, annotations=NULL, build='HG19') { # {{{
+alignedToSE <- function(aligned, annotations=NULL, build='HG19', rpkm=F) { # {{{
 
   require(Rsubread)
   asy.dat <- SimpleList()
-  if('rpkm' %in% names(aligned)) asy.dat$rpkm <- aligned$rpkm
-  else asy.dat$rpkm <- alignedToRPKM(aligned)
+  if( rpkm == TRUE) { 
+    if('rpkm' %in% names(aligned)) asy.dat$rpkm <- aligned$rpkm
+    else asy.dat$rpkm <- alignedToRPKM(aligned)
+  } else { 
+    asy.dat$rpm <- alignedToRPM(aligned)
+  }
   asy.dat$counts <- aligned$counts
   if('pvals' %in% names(aligned)) asy.dat$pvals <- aligned$pvals
   
@@ -50,7 +54,7 @@ alignedToSE <- function(aligned, annotations=NULL, build='HG19') { # {{{
 
 } # }}}
 
-## same thing but defaults to RPM instead of RPKM as the "alternate" measure
+## same thing but for miRs (these can then be merged if desired)
 alignedToMiRnaSE <- function(aligned, annotations=NULL, build='HG19') { # {{{
 
   require(Rsubread)

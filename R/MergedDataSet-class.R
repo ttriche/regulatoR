@@ -1,3 +1,4 @@
+require(GenomicRanges) ## ensure that SummarizedExperiment has been declared
 setClassUnion("SummarizedExperimentOrNULL",c("SummarizedExperiment","NULL"))
 
 ## slots: exprData, methData, geneData, exonData, lincData, mirData, cnvData

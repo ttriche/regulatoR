@@ -1,9 +1,6 @@
-mixFilter <- function(x, minSep=0.2, G=c(2:5), ...) {
+mixFilter <- function(x, ...) {
   bak <- list(values=x, retain=0)
-  res <- try(clusterAndCollapse(x, minSep=minSep, G=G), silent=TRUE)
-  if(!inherits(res, 'try-error')) {
-    return(res)
-  } else {
-    return(bak)
-  }
+  res <- try(clusterAndCollapse(x, ...), silent=T)
+  if(!inherits(res, 'try-error')) return(res)
+  else return(bak)
 }

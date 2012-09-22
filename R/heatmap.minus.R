@@ -17,7 +17,7 @@ std.cols <- c(
               '#888800', # yellow
               '#008888', # teal
               '#880088', # purple
-              '#448844', # gray green
+              '#0000AA', # blue
               '#004488', # tealish
               '#886644', # tealish
               '#FFFF00', # tealish
@@ -40,24 +40,40 @@ type.font <- c('cell' = 1,
                'fusion' = 1,
                'gene' = 3)
 
+std.anno <- c('CD34.1',
+              'CD34.2',
+              'CD34.3',
+              'CD34.DHS',
+              'CD14.DHS',
+              'SPACER1',
+              # 'CMK','CMK.DHS',
+              # 'SPACER3',
+              # 'K562','K562.DHS',
+              # 'SPACER3',
+              'H3K36me3', # exons
+              'H3K27me3','H3K4me3', # bivalence
+              'H3K4me1','H3K27ac', # enhancers
+              'SPACER',
+              'CPGI'
+              )
 # normal bone marrow covariates
 ctls.type <- c('PMN' = 'cell',
-               'CD3' = 'cell',
-               'CD19' = 'cell',
-               'CD34' = 'cell')
+               'CD34' = 'cell',
+               'CD14' = 'cell',
+               'CD15' = 'cell')
 ctls.std <- names(ctls.type)
 
 # LAML mutations/fusions of note
 # formatting is ala Tim Ley
 muts.type <- c(               
-               #'kEquals10' = 'cluster',
+               #'kEquals3' = 'cluster',
+               #'kEquals4' = 'cluster',
+               #'kEquals5' = 'cluster',
+               #'kEquals6' = 'cluster',
                #'kEquals11' = 'cluster',
-               #'kEquals12' = 'cluster',
-               #'kEquals13' = 'cluster',
-               #'kEquals14' = 'cluster',
-               #'kEquals15' = 'cluster',
+               'cluster' = 'cluster',
 
-               #'SPACER' = 'spacer',
+               'SPACER' = 'spacer',
 
                'DNMT3A.R882' = 'gene',
                'NPM1' = 'gene',
@@ -68,9 +84,8 @@ muts.type <- c(
                #'ABL.CBL.KIT' = 'gene',
                'TET1.TET2' = 'gene',
                'IDH1.IDH2' = 'gene', 
-               'Polycomb' = 'gene', ## EZH2, EED, SUZ12, ASXL1, CBX7
+               #'Polycomb' = 'gene', ## EZH2, EED, SUZ12, ASXL1, CBX7
                #'ETV6.IKZF1.IKZF4' = 'gene',
-               'TP53' = 'gene',
                #'Spliceosome' = 'gene', ## SF3B1, PRPF8, PRPF4B, U2AF1, U2AF2,
                                        ### SRSF6, TRA2B, CSTF2T, DDX1, DDX23, 
                                        ### DHX32, METTL3, PLRG1, PRPF3, RBMX,
@@ -79,18 +94,17 @@ muts.type <- c(
                #'Cohesin' = 'gene', ## STAG2, RAD21, SMC3, SMC1A
                'RUNX1' = 'gene', 
                'CEBPA' = 'gene', 
-               'CBFB' = 'gene', 
+               'TP53' = 'gene',
 
                'SPACER' = 'spacer',
                 
-               'CBFB.MYH11' = 'fusion',
-               'RUNX1.RUNX1T1' = 'fusion',
-               'PML.RARA' = 'fusion',
                'AF10.PICALM' = 'fusion', ## two
+               'RUNX1.RUNX1T1' = 'fusion',
+               'CBFB.MYH11' = 'fusion',
+               'PML.RARA' = 'fusion',
                'NUP98.NSD1' = 'fusion', ## three
                'MLL.ELL' = 'fusion', ## three 
                'MLL_non.ELL' = 'fusion' ## several
-
                )
 muts.std <- names(muts.type)
 
@@ -260,26 +274,13 @@ coolmap <- function(SE1,
                     logit=FALSE,
                     Rdend=FALSE,
                     Cdend=FALSE,
-                    probeAnno=c(
-                                'CD34.1','CD34.2','CD34.3',
-                                'CD34.DHS','CD14.DHS',
-                                'SPACER1',
-                                'CMK','CMK.DHS',
-                                'SPACER3',
-                                'K562','K562.DHS',
-                                'SPACER3',
-                                'H3K36me3', # exons
-                                'H3K27me3','H3K4me3', # bivalence
-                                'H3K4me1','H3K27ac', # enhancers
-                                'SPACER2',
-                                'CPGI'
-                                ),
+                    probeAnno=std.anno,
                     output=TRUE,
                     labRow='',
                     CpH=FALSE,
                     k=15,
-                    rowRatio=0.75,
-                    colRatio=0.25,
+                    rowRatio=0.8,
+                    colRatio=0.2,
                     ...) 
 { # {{{
 

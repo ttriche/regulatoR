@@ -1,18 +1,17 @@
-clusterAndCollapse <-
-function(x, minSep, G=c(1:5)) {  ## this should recurse
+clusterAndCollapse <- function(x, minSep=0.2, ...) {  ## this should recurse
   require(mclust)
   results = list()
   results$retain = 0
   results$values = x
-  mcl = Mclust(x, G=G) # look for small i# of groups by default
+  mcl = Mclust(x, ...) # look for small # of groups by default
   means = mcl$parameters$mean
   diff.mat = sapply(means, function(x) sapply(means, '-', x))
-  if(all(diff.mat < minSep)){
-    return(results)
-  } else if(any(is.na(x))) {                                                    
+  if(all(diff.mat < minSep)){ # {{{
+    return(results) # }}}
+  } else if(any(is.na(x))) { # {{{ skip
     message('NA/NaN values found, skipping... impute if you want to use these')
-    return(results)
-  } else if(any(diff.mat[ -which(diff.mat==0) ] < minSep)) { 
+    return(results) # }}}
+  } else if(any(diff.mat[ -which(diff.mat==0) ] < minSep)) { # {{{ collapse
     rounds = 1
     i = rev(order(table(as.factor(mcl$classification))))[1]
     while(rounds < mcl$G) { # {{{ the business: collapse if sep < minSep 
@@ -42,5 +41,5 @@ function(x, minSep, G=c(1:5)) {  ## this should recurse
     results$values = means[ as.character(mcl$classification) ]
     results$retain = length(unique(results$values))
     return(results)
-  }
+  } # }}}
 }

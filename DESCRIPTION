@@ -1,8 +1,8 @@
 Package: regulatoR
 Type: Package
 Title: robust detection of regulatoRy associations between loci and features
-Version: 0.9.22
-Date: 2012-08-06
+Version: 0.9.25
+Date: 2012-09-21
 Depends: Biobase, Matrix, rtracklayer, FDb.InfiniumMethylation.hg19
 Imports: IRanges, GenomicRanges, GenomicFeatures, rtracklayer, Matrix
 Suggests: Rsubread, GMD, org.Hs.eg.db, mclust, Repitools, robust, FWDselect

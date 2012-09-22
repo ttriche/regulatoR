@@ -1,18 +1,27 @@
 if( !('regulatoR' %in% rownames(installed.packages())) ) {
 
+  fromChr <- function(seqs, prefix='chr') { # {{{
+    for(i in rev(seq_len(nchar(prefix)))) {
+      seqs <- gsub(paste0('^', substr(prefix, 1, i)), '', seqs)
+    }
+    return(seqs)
+  } # }}}
+
+  toChr <- function(seqs, prefix='chr') { # {{{
+    paste0(prefix, fromChr(seqs, prefix))
+  } # }}}
+
   df2GR <- function(df, keepColumns=F, ignoreStrand=F, prefix='chr') { ## {{{
 
     if(class(df) == 'DataFrame') df <- as(df, 'data.frame')
     if(class(df) != 'data.frame') stop('df must be a data.frame or DataFrame')
 
     ## tidy up column names to coerce
-    subs <- list(start='chromStart', 
-                 seqnames='chrom',
-                 end='chromEnd', 
-                 chr='chrom')
-    for(s in names(subs)) {
-      names(df) = gsub(s, subs[[s]], names(df), ignore=TRUE)
-    }
+    subs <- c(chr='chrom',
+              seqnames='chrom',
+              start='chromStart', 
+              end='chromEnd')
+    for(s in names(subs)) names(df) = gsub(s, subs[s], names(df), ignore=TRUE)
     if(!all(unique(subs) %in% names(df))) {
       stop('df must have columns chrom, chromStart, chromEnd to proceed')
     }

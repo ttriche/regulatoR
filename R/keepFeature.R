@@ -1,7 +1,12 @@
-keepFeature <- function(x, minSep=0.2, G=c(1:5), ...) {
+keepFeature <- function(x, ..., lg=FALSE) { 
+  # this takes less than 0.08 seconds/feature on my laptop 
+  rows <- rownames(x) 
+  if(is(x, 'SummarizedExperiment')) {
+    x <- asy.fast(x)
+    rownames(x) <- rows
+  }
+  if(lg == TRUE) x <- log1p(x)
   stopifnot(is(x, 'matrix'))
   require(parallel)
-  unlist(mclapply(rownames(x), function(y) {
-    return( mixFilter(x[y,],minSep=minSep,G=G)$retain > 1 )
-  }))
+  unlist(mclapply(rows, function(y) return(mixFilter(x[y,],...)$retain > 1)))
 }
