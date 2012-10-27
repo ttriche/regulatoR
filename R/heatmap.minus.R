@@ -8,7 +8,7 @@
 ###############################################################################
 
 # standardized mutation matrix colors
-std.cols <- c(
+std.cols <- c( # {{{
               '#E0E0E0', # gray
               '#000000', # black
               '#BB0000', # red
@@ -24,8 +24,8 @@ std.cols <- c(
               '#0088FF', # tealish
               '#664422', # tealish
               '#FF00FF' # tealish
-              )
-alt.cols <- c(
+              ) # }}}
+alt.cols <- c(  # {{{
               '#E0E0E0', # gray
               '#000088', # blue  (fused)
               '#000000', # black (mutated)
@@ -33,7 +33,7 @@ alt.cols <- c(
               '#888800', # yellow
               '#008888', # teal
               '#880088'  # purple
-              )
+              ) # }}}
 
 # standardized fonts 
 type.font <- c('cell' = 1,
@@ -42,20 +42,21 @@ type.font <- c('cell' = 1,
 
 std.anno <- c('CD34.1',
               'CD34.2',
-              'CD34.3',
-              'CD34.DHS',
-              'CD14.DHS',
-              'SPACER1',
-              # 'CMK','CMK.DHS',
-              # 'SPACER3',
-              # 'K562','K562.DHS',
-              # 'SPACER3',
-              'H3K36me3', # exons
-              'H3K27me3','H3K4me3', # bivalence
-              'H3K4me1','H3K27ac', # enhancers
-              'SPACER',
-              'CPGI'
-              )
+              'CD34.3')
+new.anno <- c(std.anno,
+              'PROS.4',
+              'PROS.5',
+              'PROS.6',
+              'PMN.4',
+              'PMN.5',
+              'PMN.6',
+              'MONO.4',
+              'MONO.5',
+              'MONO.6')
+#std.anno <- c(std.anno, 'SPACER', 'CPGI')
+std.anno <- c(new.anno, 'SPACER', 'CPGI')
+rev.anno <- rev(std.anno) # for low-CpG panel
+
 # normal bone marrow covariates
 ctls.type <- c('PMN' = 'cell',
                'CD34' = 'cell',
@@ -65,17 +66,18 @@ ctls.std <- names(ctls.type)
 
 # LAML mutations/fusions of note
 # formatting is ala Tim Ley
-muts.type <- c(               
+old.muts.type <- c( # {{{
                #'kEquals3' = 'cluster',
                #'kEquals4' = 'cluster',
                #'kEquals5' = 'cluster',
                #'kEquals6' = 'cluster',
                #'kEquals11' = 'cluster',
-               'cluster' = 'cluster',
+               #'cluster' = 'cluster',
+               # 'FAB' = 'cluster',
 
                'SPACER' = 'spacer',
 
-               'DNMT3A.R882' = 'gene',
+               'DNMT3A' = 'gene',
                'NPM1' = 'gene',
                'FLT3' = 'gene',
                #'NRAS.KRAS' = 'gene',
@@ -98,21 +100,72 @@ muts.type <- c(
 
                'SPACER' = 'spacer',
                 
-               'AF10.PICALM' = 'fusion', ## two
+               'MLL.fusions' = 'fusion', ## several
+
+               'SPACER' = 'spacer',
+
                'RUNX1.RUNX1T1' = 'fusion',
-               'CBFB.MYH11' = 'fusion',
+               'MYH11.CBFB' = 'fusion',
                'PML.RARA' = 'fusion',
-               'NUP98.NSD1' = 'fusion', ## three
-               'MLL.ELL' = 'fusion', ## three 
-               'MLL_non.ELL' = 'fusion' ## several
-               )
-muts.std <- names(muts.type)
+               'PICALM.MLLT10' = 'fusion' ## two
+               ) # }}}
+muts.type <- rev( # {{{
+                 c(
+                   M0 = 'gene',
+                   M1 = 'gene',
+                   M2 = 'gene',
+                   M3 = 'gene',
+                   M4 = 'gene',
+                   M5 = 'gene',
+                   M6 = 'gene',
+                   M7 = 'gene',
+                   SPACER = 'spacer',
+                   PML.RARA = 'fusion',
+                   MYH11.CBFB = 'fusion',
+                   RUNX1.RUNX1T1 = 'fusion',
+                   PICALM.MLLT10 = 'fusion',
+                   SPACER = 'spacer',
+                   NPM1 = 'gene',
+                   TP53 = 'gene',
+                   WT1 = 'gene',
+                   DNMT3A = 'gene',
+                   DNMT3B = 'gene',
+                   DNMT1 = 'gene',
+                   TET1 = 'gene',
+                   TET2 = 'gene',
+                   IDH1 = 'gene',
+                   IDH2 = 'gene',
+                   FLT3 = 'gene',
+                   KIT = 'gene',
+                   Other_Tyr_kinases = 'gene',
+                   Ser.Thr_kinases = 'gene',
+                   KRAS.NRAS = 'gene',
+                   PTPs = 'gene',
+                   RUNX1 = 'gene',
+                   CEBPA = 'gene',
+                   Other_myeloid_TFs = 'gene',
+                   MLL_fusions = 'fusion',
+                   MLL_PTD = 'gene',
+                   NUP98.NSD1 = 'fusion',
+                   ASXL1 = 'gene',
+                   EZH2 = 'gene',
+                   KDM6A = 'gene',
+                   Other_modifiers = 'gene',
+                   Cohesin = 'gene',
+                   Spliceosome = 'gene',
+                   SPACER = 'spacer',
+                   Cytogenetic_risk = 'risk'
+                )
+              ) # }}}
+# muts.std <- names(rev(muts.type))
+muts.std <- c('SPACER'='SPACER','SPACER'='SPACER')
+muts.type <- muts.std ## doh
 
 # traditional
 jet.colors <- colorRampPalette(c("#00007F","blue","#007FFF","cyan","#7FFF7F", 
                                  "yellow", "#FF7F00", "red", "#7F0000"))
 
-# TimLeytional
+# monochrome
 ley.colors <- colorRampPalette(c("white","black"))
 
 # Expression
@@ -120,6 +173,9 @@ exp.colors <- colorRampPalette(c("green","black","red"))
 
 # Age
 age.colors <- colorRampPalette(c("green","yellow","red"))
+
+# Risk
+risk.colors = function(...) return(c("white","pink","red","gray50"))
 
 # accessibility
 dgf.colors <- colorRampPalette(
@@ -139,6 +195,8 @@ getBar <- function(SE, name=NULL, cols=std.cols, alt=alt.cols) { # {{{
   }
   if(toupper(name)=='GENDER') {
     ifelse(colData(SE)[[name]]=='M','lightblue','pink')
+  } else if(toupper(name)=='CYTOGENETIC_RISK') {
+    risk.colors()[colData(SE)[[name]]]
   } else if(toupper(name)=='AGE') {
     age.colors(100)[colData(SE)[[name]]]
   } else if(is.logical(x)) {
@@ -149,7 +207,6 @@ getBar <- function(SE, name=NULL, cols=std.cols, alt=alt.cols) { # {{{
     ifelse(x %in% c('',' ','false','FALSE'), cols[1], cols[2])
   }
 } # }}}
-
 getMatrix <- function(SE, muts, cols=std.cols, alt=alt.cols) { # {{{
   mat <- matrix(NA, ncol=ncol(SE), nrow=length(muts))
   colnames(mat) <- colnames(SE)
@@ -193,18 +250,23 @@ getProbeBar <- function(SE, name=NULL, col1='#9F9FA3',col2='#000000') { # {{{
                                  'H3K4ME1','H3K27AC')) {
     ley.colors(100)[x * 10]
   } else if(toupper(name) %in% c('CD34.1','CD34.2','CD34.3','CD133','PBMC',
-                                 'K562','CMK','NB4','HL60')) {
+                                 'K562','CMK','NB4','HL60','MONO.4','MONO.5',
+                                 'MONO.6','PROS.4','PROS.5','PROS.6','PMN.1',
+                                 'PMN.2','PMN.3','PMN.4','PMN.5','PMN.6')) {
     jet.colors(100)[x * 100]
   } else {
     ifelse(values(rowData(SE))[[name]], col2, col1)
   }
 } # }}}
-
 getProbeMatrix <- function(SE, covs) { # {{{
   mat <- matrix( rep('#FFFFFF', nrow(SE)), ncol=1 )
   mat = cbind(mat,
               do.call(cbind, lapply(covs, function(x) getProbeBar(SE, x))))
   colnames(mat) <- c('', gsub('CD34.DGF','DGF', gsub('SPACER.*',' ',covs)))
+  colnames(mat) <- gsub('CD34.*','CD34', colnames(mat))
+  colnames(mat) <- gsub('MONO.*','MONO', colnames(mat))
+  colnames(mat) <- gsub('PROS.*','PROS', colnames(mat))
+  colnames(mat) <- gsub('PMN.*','PMN', colnames(mat))
   rownames(mat) <- rownames(SE)
   return(mat)
 } # }}}
@@ -279,7 +341,7 @@ coolmap <- function(SE1,
                     labRow='',
                     CpH=FALSE,
                     k=15,
-                    rowRatio=0.8,
+                    rowRatio=0.2,
                     colRatio=0.2,
                     ...) 
 { # {{{
@@ -288,7 +350,7 @@ coolmap <- function(SE1,
   if(any(seqnames(SE1) %in% c('chrX','chrY'))) { # {{{ tidy up
     exclude <- union(exclude, which(seqnames(SE1) %in% c('chrX','chrY')))
   } # }}}
-  if(any(rowSums(is.na(asy.fast(SE1)))/ncol(SE1) >= 0.5)) {
+  if(any(rowSums(is.na(asy.fast(SE1)))/ncol(SE1) >= 0.5)) { # {{{
     exclude = union(exclude,which(rowSums(is.na(asy.fast(SE1)))/ncol(SE1)>=.5))
   } # }}}
 
@@ -319,7 +381,7 @@ coolmap <- function(SE1,
   }
 
   z <- z2 <- NULL
-  z <- t(getMatrix(SE1, muts))
+  if(!is.null(muts)) z <- t(getMatrix(SE1, muts))
   if(!is.null(SE2) && !is.null(ctls)) z2 <- t(getMatrix(SE2, ctls))
 
   hf <- function(w) hclust(w, method=method)
@@ -329,11 +391,21 @@ coolmap <- function(SE1,
   
   if(is.null(SE2)) {
     labCol = '' #  gsub('TCGA(_|-AB-)','',colnames(SE1))
-    out <- heatmap.minus(x=x, ColSideColors=z, col=col, hclustfun=hf, 
-                         scale='none', Rdend=Rdend, Cdend=Cdend, labRow=labRow, 
-                         labCol=labCol, RowSideColors=RowSideColors, 
-                         x2names=FALSE, output=TRUE, rowRatio=rowRatio,
-                         colRatio=colRatio, k=k, ...)
+    if(is.null(z)) {
+      out <- heatmap.minus(x=x, col=col, hclustfun=hf, scale='none', 
+                           Rdend=Rdend, Cdend=Cdend, labRow=labRow, 
+                           labCol=labCol, RowSideColors=RowSideColors, 
+                           x2names=FALSE, output=TRUE, rowRatio=rowRatio,
+                           colRatio=colRatio, k=k, ...)
+    } else {
+      out <- heatmap.minus(x=x, ColSideColors=z, col=col, hclustfun=hf, 
+                           scale='none', Rdend=Rdend, Cdend=Cdend, 
+                           labRow=labRow, labCol=labCol, 
+                           RowSideColors=RowSideColors, 
+                           x2names=FALSE, output=TRUE, rowRatio=rowRatio,
+                           colRatio=colRatio, k=k, ...)
+
+    }
   } else { 
     out <- heatmap.minus(x=x, x2=x2, ColSideColors=z, ColSideColors2=z2, 
                          col=col, hclustfun=hf, scale='none', Rdend=Rdend, 
@@ -380,8 +452,8 @@ heatmap.minus<-function(x,
                         colLabSrt=90,
                         cexRow = 0.2 + 1/log10(nr), 
                         cexCol = 0.2 + 1/log10(nc), 
-                        labCex=1.5,
-                        mtextCex=1.3,
+                        labCex=1.25,
+                        mtextCex=1.25,
                         ratio=1,
                         rowRatio=0.1,
                         colRatio=0.1,
@@ -396,7 +468,10 @@ heatmap.minus<-function(x,
 		                    verbose = getOption("verbose"),
                         output=FALSE, 
                         x2names=FALSE,
+                        revT=FALSE,
                         k=15,
+                        leftLabels=FALSE,
+                        useRaster=FALSE,
                         ...) 
 { # {{{
 
@@ -560,8 +635,8 @@ heatmap.minus<-function(x,
 			rsc.i = rsc.i + 1
 		}
 		rsc = matrix(as.numeric(rsc), nrow = dim(rsc)[1])
-		image(t(rsc), col = as.vector(rsc.colors), axes = FALSE)
-		if (length(colnames(RowSideColors)) > 0) {
+		image(t(rsc), col = as.vector(rsc.colors), axes=FALSE, useRaster=useRaster)
+		if (length(colnames(RowSideColors)) > 0 && leftLabels == TRUE ) {
 			axis(1, 0:(dim(rsc)[2] - 1)/(dim(rsc)[2] - 1), labels=FALSE, las = 2, tick = FALSE)
 		text(0:(dim(rsc)[2]-1)/(dim(rsc)[2] - 1) , -0.02, colnames(RowSideColors), 
 		
@@ -583,8 +658,8 @@ heatmap.minus<-function(x,
 			csc.i = csc.i + 1
 		}
 		csc = matrix(as.numeric(csc), nrow = dim(csc)[1])
-		image(csc, col = as.vector(csc.colors), axes = FALSE)
-		if (length(colnames(ColSideColors)) > 0) {
+		image(csc, col = as.vector(csc.colors), axes = FALSE, useRaster=useRaster)
+		if (length(colnames(ColSideColors)) > 0 && leftLabels == TRUE) {
 			
 			axis(2, 0:(dim(csc)[2] - 1)/(dim(csc)[2] - 1), colnames(ColSideColors), font=2, las = 2, tick = FALSE,cex.axis=labCex)
 		}
@@ -599,9 +674,14 @@ heatmap.minus<-function(x,
 		x <- x[, iy]
 	}
 	else iy <- 1:nr
-	image(1:nc, 1:nr, x, xlim = 0.5 + c(0, nc), ylim = 0.5 + 
-					c(0, nr), col=col, axes = FALSE, xlab = "", ylab = "")
-	axis(1, 1:nc, labels = FALSE, las = 2, line = -0.5, tick = 0) #, cex.axis = cexCol)
+  if(revT==TRUE) {
+    image(1:nc, 1:nr, x[nc:1,], xlim = 0.5 + c(0, nc), ylim = 0.5 + c(0, nr), 
+          col=col, axes = FALSE, xlab = "", ylab = "", useRaster=useRaster)
+  } else { 
+    image(1:nc, 1:nr, x, xlim = 0.5 + c(0, nc), ylim = 0.5 + c(0, nr), 
+          col=col, axes = FALSE, xlab = "", ylab = "", useRaster=useRaster)
+  } 
+  axis(1, 1:nc, labels = FALSE, las = 2, line = -0.5, tick = 0) #, cex.axis = cexCol)
 	text(c(1:nc), 1, labels = labCol, srt = colLabSrt, adj=c(1.5,1.5), xpd=TRUE, offset=2, font=2,cex=cexCol)
 	if (!is.null(mtext1)){
 	mtext(mtext1,1,line=mline1,cex=mtextCex,font=2)
@@ -628,7 +708,8 @@ heatmap.minus<-function(x,
 		title(main, cex.main = 1.5 * op[["cex.main"]])
 	invisible(list(rowInd = rowInd, colInd = colInd, Rowv = if (keep.dendro && 
 							doRdend) ddr, Colv = if (keep.dendro && doCdend) ddc))
-	if (!is.null(x2)){
+
+	if (!is.null(x2)){ # {{{
 		par(mar=c(margins[1], splitmar, sidemar,margins[2]))
 		rownames.ordered<-row.x[rowInd]
 		newrow<-rownames.ordered
@@ -640,15 +721,15 @@ heatmap.minus<-function(x,
 		
 		x2.ordered<-as.matrix(x2[newrow,newcol])
 		nc2<-dim(x2)[2]
-		image(1:nc2, 1:nr, t(x2.ordered), xlim =0.5+c(0, nc2), ylim = 0.5+c(0, nr), axes = FALSE,xlab = "", ylab = "",col=col,...)
+		image(1:nc2, 1:nr, t(x2.ordered), xlim =0.5+c(0, nc2), ylim = 0.5+c(0, nr),
+          axes = FALSE, xlab = "", ylab = "", col=col, useRaster=useRaster, ...)
 	  axis(1, 1:nc2, labels = FALSE, las = 2, line = -0.5, tick = 0) #, cex.axis = cexCol)
 	  if(x2names != FALSE) text(c(1:nc2), 1, labels = colnames(x2)[newcol], srt = colLabSrt, adj=c(1.5,1.5), xpd=TRUE, offset=2, font=2,cex=cexCol)
 		if (!is.null(mtext2)){
 	  	mtext(mtext2,1, adj=0.5, line=mline2,font=2,cex=mtextCex)
 	  }
-	}
-	
-	if (!missing(ColSideColors2) && !is.null(ColSideColors2)) {
+	} # }}}
+	if (!missing(ColSideColors2) && !is.null(ColSideColors2)) { # {{{
 		par(mar = c(0.5, splitmar, 0, margins[2]))
 		csc = ColSideColors2[newcol, ]
 		csc.colors = matrix()
@@ -663,17 +744,23 @@ heatmap.minus<-function(x,
 		csc = matrix(as.numeric(csc), nrow = dim(csc)[1])
 		image(csc, col = as.vector(csc.colors), axes = FALSE)
     axis(4, 0:(dim(csc)[2] - 1)/(dim(csc)[2] - 1), colnames(ColSideColors2), font=2, las = 2, tick = FALSE,cex.axis=labCex)
-	}
+	} # }}}
 	
 	if (output){
     out<-list()
-    out$colInd <- colInd
-    out$colNames <- rownames(x)
+    if(revT==TRUE) {
+      out$colInd <- rev(colInd)
+      out$colNames <- rev(rownames(x))
+      out$clusters <- rev(clusters)
+    } else { 
+      out$colInd <- colInd
+      out$colNames <- rownames(x)
+      out$clusters <- clusters
+    }
     out$ddc <- ddc
     out$rowInd <- rowInd
     out$rowNames <- colnames(x)
     out$ddr <- ddr
-    out$clusters <- clusters
 	  if (!missing(ColSideColors2) && !is.null(ColSideColors2)) {
       out$colInd2<-newcol
       out$rowInd2<-newrow
@@ -681,9 +768,3 @@ heatmap.minus<-function(x,
     return(out)
 	}
 } # }}}
-
-############################################################################
-# HISTORY:
-# May 23, 2011
-# o Created. by hui
-############################################################################
