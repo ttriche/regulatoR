@@ -6,8 +6,11 @@
 ##
 combineSeWithNAs <- function(x, y, ...) { 
 
-  ## not REALLY done... should call disjoin() then count things elegantly
-  message('This is an experimental function and may not do what you think!')
+  eq <- findOverlaps(rowData(x), rowData(y), type='equal')
+  ol <- findOverlaps(rowData(x), rowData(y), type='any')
+  if(length(ol) != length(eq)) {
+    message('Some features overlap only partially -- you may want to disjoin()')
+  }
 
   ## would prefer to automatically do this if x is itself a list!
   if(length(list(...)) > 0L) y = do.call(combineSeWithNAs, list(y, ...))
