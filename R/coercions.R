@@ -74,6 +74,10 @@ df2GR <- function(df, keepColumns=F, ignoreStrand=F, prefix='chr') { ## {{{
 } # }}}
 setAs("data.frame", "GenomicRanges", function(from) df2GR(from)) 
 setAs("DataFrame", "GenomicRanges", function(from) df2GR(from)) 
+setAs("DataFrame", "data.frame", function(from) as.data.frame(from))
+
+## from Herve:
+as.data.frame.DataFrame <- selectMethod("as.data.frame", "DataFrame")
 
 setAs("MIAME", "SimpleList",
   function(from) { # {{{
@@ -125,31 +129,31 @@ eSetToSE <- function(from) { # {{{
 } # }}}
 setAs("ExpressionSet", "SummarizedExperiment", function(from) eSetToSE(from)) 
 
-## for MethyLumiSets (sorta awkward as GEO 450k data has different assay names)
-if(require(methylumi)) { ## this is going into MethyLumi anyhow, eventually...
-  msetToSE <- function(from) { # {{{
-    require(FDb.InfiniumMethylation.hg19) 
-    chip=gsub('^IlluminaHumanMethylation','HM',gsub('k$','',annotation(from)))
-    row.dat <- getPlatform(chip)
-    asy.dat <- SimpleList()
-    features <- intersect(featureNames(from), names(row.dat))
-    if(is(from, 'MethyLumiM')) {
-      asy.dat$mvals = assayDataElement(from, 'exprs')[features, ]
-    } else if(is(from, 'MethyLumiSet')) {
-      asy.dat$betas = assayDataElement(from, 'betas')[features, ]
-    }
-    if(all( c('methylated','unmethylated') %in% assayDataElementNames(from))){
-      asy.dat$total = assayDataElement(from, 'methylated')[features, ] +
-                      assayDataElement(from, 'unmethylated')[features, ]
-    }
-    SummarizedExperiment(assays=asy.dat,
-                         rowData=row.dat[features],
-                         colData=as(pData(from), 'DataFrame'),
-                         exptData=as(experimentData(from), 'SimpleList'))
-  } # }}}
-  setAs("MethyLumiSet", "SummarizedExperiment", function(from) msetToSE(from))
-  setAs("MethyLumiM", "SummarizedExperiment", function(from) msetToSE(from))
-} 
+## part of methylumi as of 2.5.9
+#if(require(methylumi)) { ## this is going into MethyLumi anyhow, eventually...
+  #msetToSE <- function(from) { # {{{
+    #require(FDb.InfiniumMethylation.hg19) 
+    #chip=gsub('^IlluminaHumanMethylation','HM',gsub('k$','',annotation(from)))
+    #row.dat <- getPlatform(chip)
+    #asy.dat <- SimpleList()
+    #features <- intersect(featureNames(from), names(row.dat))
+    #if(is(from, 'MethyLumiM')) {
+      #asy.dat$mvals = assayDataElement(from, 'exprs')[features, ]
+    #} else if(is(from, 'MethyLumiSet')) {
+      #asy.dat$betas = assayDataElement(from, 'betas')[features, ]
+    #}
+    #if(all( c('methylated','unmethylated') %in% assayDataElementNames(from))){
+      #asy.dat$total = assayDataElement(from, 'methylated')[features, ] +
+                      #assayDataElement(from, 'unmethylated')[features, ]
+    #}
+    #SummarizedExperiment(assays=asy.dat,
+                         #rowData=row.dat[features],
+                         #colData=as(pData(from), 'DataFrame'),
+                         #exptData=as(experimentData(from), 'SimpleList'))
+  #} # }}}
+  #setAs("MethyLumiSet", "SummarizedExperiment", function(from) msetToSE(from))
+  #setAs("MethyLumiM", "SummarizedExperiment", function(from) msetToSE(from))
+#}
 
 ## for Gviz
 setAs("SummarizedExperiment", "GRanges", # just the first assay element for Gviz
